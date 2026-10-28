@@ -1,1 +1,0 @@
-"""CLIMAFORGE Backend Root Package."""

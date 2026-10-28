@@ -19,6 +19,7 @@ export interface HealthResponse {
 export type UrgencyLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 export type IncidentStatus = 'NOT_SENT' | 'QUEUED' | 'ACKNOWLEDGED' | 'RESOLVED';
 export type AdvisoryStatus = 'ADVISORY_ACCEPTED' | 'FALLBACK' | 'DISABLED';
+export type RiskSeverity = 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL';
 
 export interface ZoneInput {
   zone_id: string;
@@ -80,4 +81,62 @@ export interface IncidentRecord {
   urgency: UrgencyLevel;
   status: IncidentStatus;
   description: string;
+}
+
+export interface ScenarioZoneItem {
+  zone_id: string;
+  name: string;
+  rainfall_mm: number;
+  elevation_m: number;
+  soil_saturation_index: number;
+  drainage_capacity_cms: number;
+  critical_infrastructure_count: number;
+  risk_score: number;
+  severity: RiskSeverity;
+  is_hotspot: boolean;
+  data_provenance: string;
+  centroid_lat?: number | null;
+  centroid_lon?: number | null;
+  schematic_x: number;
+  schematic_y: number;
+}
+
+export interface ScenarioSummaryItem {
+  scenario_id: string;
+  name: string;
+  description: string;
+  severity: 'NOMINAL' | 'ELEVATED' | 'CRITICAL';
+  zone_count: number;
+  hotspot_count: number;
+  highest_risk_score: number;
+  highest_risk_zone_name: string;
+  critical_infrastructure_count: number;
+  data_label: string;
+}
+
+export interface SafePointItem {
+  safe_point_id: string;
+  name: string;
+  zone_id: string;
+  capacity_persons: number;
+  elevation_m: number;
+  label: string;
+}
+
+export interface ScenarioDetail extends ScenarioSummaryItem {
+  generated_at: string;
+  analysis_engine_status: string;
+  zones: ScenarioZoneItem[];
+  nodes: GraphNode[];
+  interventions: Intervention[];
+  safe_points: SafePointItem[];
+}
+
+export interface AuditEvent {
+  event_id: string;
+  timestamp: string;
+  event_type: string;
+  source: 'BACKEND' | 'FRONTEND';
+  description: string;
+  details: Record<string, string>;
 }

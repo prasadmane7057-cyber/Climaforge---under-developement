@@ -5,6 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.routers.health import router as health_router
+from app.routers.scenarios import router as scenarios_router
+from app.routers.audit import router as audit_router
 
 app = FastAPI(
     title=settings.app_name,
@@ -26,9 +28,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Register Routers
+# Register Routers (Both direct and /api prefixes)
 app.include_router(health_router)
 app.include_router(health_router, prefix="/api")
+
+app.include_router(scenarios_router)
+app.include_router(scenarios_router, prefix="/api")
+
+app.include_router(audit_router)
+app.include_router(audit_router, prefix="/api")
 
 
 @app.get("/", summary="Root Index")
@@ -40,5 +48,7 @@ async def root():
         "status": "operational",
         "docs_url": "/docs",
         "health_url": "/health",
+        "scenarios_url": "/api/scenarios",
+        "audit_logs_url": "/api/audit-logs",
         "disclaimer": "SYNTHETIC / ILLUSTRATIVE DATA ONLY",
     }

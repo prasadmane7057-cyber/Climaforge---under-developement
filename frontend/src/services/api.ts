@@ -2,7 +2,12 @@
  * API service client for CLIMAFORGE backend.
  */
 
-import type { HealthResponse } from '../types/api';
+import type {
+  HealthResponse,
+  ScenarioSummaryItem,
+  ScenarioDetail,
+  AuditEvent,
+} from '../types/api';
 
 const DEFAULT_API_URL = 'http://localhost:8000';
 
@@ -91,4 +96,77 @@ export async function checkBackendHealth(timeoutMs = 4000): Promise<HealthCheckR
       errorDetails,
     };
   }
+}
+
+/**
+ * Fetch list of all available demonstration scenarios.
+ */
+export async function fetchScenarios(): Promise<ScenarioSummaryItem[]> {
+  const baseUrl = getApiBaseUrl();
+  const response = await fetch(`${baseUrl}/api/scenarios`, {
+    headers: { Accept: 'application/json' },
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch scenarios (HTTP ${response.status})`);
+  }
+  return response.json();
+}
+
+/**
+ * Fetch detailed metrics for a specific scenario.
+ */
+export async function fetchScenarioDetail(scenarioId: string): Promise<ScenarioDetail> {
+  const baseUrl = getApiBaseUrl();
+  const response = await fetch(`${baseUrl}/api/scenarios/${encodeURIComponent(scenarioId)}`, {
+    headers: { Accept: 'application/json' },
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch scenario details for '${scenarioId}' (HTTP ${response.status})`);
+  }
+  return response.json();
+}
+
+/**
+ * Fetch recorded session audit logs.
+ */
+export async function fetchAuditLogs(): Promise<AuditEvent[]> {
+  const baseUrl = getApiBaseUrl();
+  const response = await fetch(`${baseUrl}/api/audit-logs`, {
+    headers: { Accept: 'application/json' },
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch audit logs (HTTP ${response.status})`);
+  }
+  return response.json();
+}
+
+/**
+ * Record an authentic client-side operator event to the backend audit log.
+ */
+export async function recordClientAuditEvent(
+  eventType: string,
+  description: string,
+  details: Record<string, string> = {}
+): Promise<AuditEvent | null> {
+  try {
+    const baseUrl = getApiBaseUrl();
+    const response = await fetch(`${baseUrl}/api/audit-logs`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({
+        event_type: eventType,
+        description,
+        details,
+      }),
+    });
+    if (response.ok) {
+      return response.json();
+    }
+  } catch {
+    // Fail silently on analytics/audit logging if disconnected
+  }
+  return null;
 }
