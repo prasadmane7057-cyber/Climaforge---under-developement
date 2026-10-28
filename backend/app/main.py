@@ -1,0 +1,44 @@
+"""CLIMAFORGE FastAPI Backend Application Entrypoint."""
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.config import settings
+from app.routers.health import router as health_router
+
+app = FastAPI(
+    title=settings.app_name,
+    version=settings.version,
+    description=(
+        "CLIMAFORGE — Climate-Flood Decision-Support System Backend. "
+        "Deterministic explainable calculation core with advisory AI integration."
+    ),
+    docs_url="/docs",
+    redoc_url="/redoc",
+)
+
+# Configure CORS Middleware for Frontend Development Server
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Register Routers
+app.include_router(health_router)
+app.include_router(health_router, prefix="/api")
+
+
+@app.get("/", summary="Root Index")
+async def root():
+    """Root endpoint returning basic service metadata."""
+    return {
+        "service": settings.app_name,
+        "version": settings.version,
+        "status": "operational",
+        "docs_url": "/docs",
+        "health_url": "/health",
+        "disclaimer": "SYNTHETIC / ILLUSTRATIVE DATA ONLY",
+    }
