@@ -7,6 +7,7 @@ import type {
   ScenarioSummaryItem,
   ScenarioDetail,
   AuditEvent,
+  ScenarioAnalysisResponse,
 } from '../types/api';
 
 const DEFAULT_API_URL = 'http://localhost:8000';
@@ -169,4 +170,35 @@ export async function recordClientAuditEvent(
     // Fail silently on analytics/audit logging if disconnected
   }
   return null;
+}
+
+/**
+ * Execute deterministic calculation pipeline (Algorithms 0–3) on the backend.
+ */
+export async function runScenarioAnalysis(scenarioId: string): Promise<ScenarioAnalysisResponse> {
+  const baseUrl = getApiBaseUrl();
+  const targetUrl = `${baseUrl}/api/scenarios/${encodeURIComponent(scenarioId)}/analyze`;
+
+  const response = await fetch(targetUrl, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    let detailMsg = `HTTP ${response.status}: ${response.statusText}`;
+    try {
+      const errJson = await response.json();
+      if (errJson && errJson.detail) {
+        detailMsg = typeof errJson.detail === 'string' ? errJson.detail : JSON.stringify(errJson.detail);
+      }
+    } catch {
+      // ignore json parse error
+    }
+    throw new Error(`Analysis run failed: ${detailMsg}`);
+  }
+
+  return response.json();
 }

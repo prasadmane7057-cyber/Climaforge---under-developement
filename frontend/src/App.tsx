@@ -13,12 +13,14 @@ import {
   fetchScenarioDetail,
   fetchAuditLogs,
   recordClientAuditEvent,
+  runScenarioAnalysis,
   type HealthCheckResult,
 } from './services/api';
 import type {
   ScenarioSummaryItem,
   ScenarioDetail,
   AuditEvent,
+  ScenarioAnalysisResponse,
 } from './types/api';
 import './App.css';
 
@@ -36,6 +38,11 @@ export const App: React.FC = () => {
   // Audit trail state
   const [auditLogs, setAuditLogs] = useState<AuditEvent[]>([]);
   const [isLoadingAudit, setIsLoadingAudit] = useState<boolean>(false);
+
+  // Milestone 2 Deterministic Risk Analysis State
+  const [analysisResult, setAnalysisResult] = useState<ScenarioAnalysisResponse | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -65,6 +72,8 @@ export const App: React.FC = () => {
     async (scenarioId: string) => {
       setIsLoadingScenario(true);
       setErrorMessage(null);
+      setAnalysisResult(null);
+      setAnalysisError(null);
       try {
         const detail = await fetchScenarioDetail(scenarioId);
         setScenarioDetail(detail);
@@ -88,6 +97,25 @@ export const App: React.FC = () => {
     },
     [loadAuditLogs]
   );
+
+  // 4. Milestone 2 Run Analysis Action
+  const handleRunAnalysis = useCallback(async () => {
+    if (isAnalyzing || !selectedScenarioId) return;
+    setIsAnalyzing(true);
+    setAnalysisError(null);
+    try {
+      const res = await runScenarioAnalysis(selectedScenarioId);
+      setAnalysisResult(res);
+      await loadAuditLogs();
+    } catch (err) {
+      setAnalysisError(
+        err instanceof Error ? err.message : 'Analysis failed to execute on backend'
+      );
+      setAnalysisResult(null);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }, [isAnalyzing, selectedScenarioId, loadAuditLogs]);
 
   // 4. Initial Bootstrap
   useEffect(() => {
@@ -167,6 +195,10 @@ export const App: React.FC = () => {
               onSelectScenario={loadScenario}
               healthResult={healthResult}
               recentAuditLogs={auditLogs}
+              analysisResult={analysisResult}
+              isAnalyzing={isAnalyzing}
+              analysisError={analysisError}
+              onRunAnalysis={handleRunAnalysis}
             />
           )}
 
@@ -175,11 +207,22 @@ export const App: React.FC = () => {
           )}
 
           {activeTab === 'consequence-graph' && (
-            <ConsequenceGraphTab scenarioDetail={scenarioDetail} />
+            <ConsequenceGraphTab
+              scenarioDetail={scenarioDetail}
+              analysisResult={analysisResult}
+              isAnalyzing={isAnalyzing}
+              onRunAnalysis={handleRunAnalysis}
+            />
           )}
 
           {activeTab === 'interventions' && (
-            <InterventionsTab scenarioDetail={scenarioDetail} />
+            <InterventionsTab
+              scenarioDetail={scenarioDetail}
+              analysisResult={analysisResult}
+              isAnalyzing={isAnalyzing}
+              analysisError={analysisError}
+              onRunAnalysis={handleRunAnalysis}
+            />
           )}
 
           {activeTab === 'emergency-chatbot' && <EmergencyChatbotTab />}

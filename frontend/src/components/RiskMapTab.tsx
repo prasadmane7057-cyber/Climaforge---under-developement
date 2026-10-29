@@ -26,6 +26,7 @@ export const RiskMapTab: React.FC<RiskMapTabProps> = ({ scenarioDetail }) => {
         return '#ef4444';
       case 'HIGH':
         return '#f97316';
+      case 'MEDIUM':
       case 'MODERATE':
       case 'ELEVATED':
         return '#f59e0b';

@@ -17,7 +17,7 @@ are explicitly annotated in docstrings and Field descriptions.
 
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -275,23 +275,36 @@ class ZoneRisk(BaseModel):
     """Deterministic output for Algorithm 1 / Zone Risk calculation."""
 
     zone_id: str
-    risk_score: float = Field(..., ge=0.0, le=1.0)
+    risk_score: float = Field(..., ge=0.0, le=100.0, description="Canonical 0-100 flood risk score from Algorithm 1")
+    normalized_score: float = Field(..., ge=0.0, le=1.0, description="Normalized risk index [0.0 - 1.0] for downstream modeling")
     classification: str = Field(
-        ..., description="'LOW', 'MODERATE', 'HIGH', 'CRITICAL'"
+        ..., description="'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'"
     )
-    is_hotspot: bool = Field(..., description="Flag indicating downstream analysis priority")
+    is_hotspot: bool = Field(..., description="Flag indicating downstream analysis priority (score >= 50.0)")
+    data_quality_flag: str = Field(
+        default="COMPLETE",
+        description="'COMPLETE', 'PARTIAL_OPTIONAL_MISSING', 'DATA_INSUFFICIENT'",
+    )
+    dominant_cause: Optional[str] = Field(None, description="Dominant contributing hydrological factor")
+    breakdown: Dict[str, Any] = Field(default_factory=dict, description="Factor contributions and weights")
+
+
+class ExposureResult(BaseModel):
+    """Deterministic output for Algorithm 3 / Flood Impact & Exposure calculation."""
+
+    zone_id: str
+    impact_score: float = Field(..., ge=0.0, le=1.0, description="Weighted composite ImpactScore [0.0 - 1.0]")
+    population_score: Optional[float] = Field(None, ge=0.0, le=1.0, description="Normalized population exposure")
+    infrastructure_score: Optional[float] = Field(None, ge=0.0, le=1.0, description="Normalized critical infrastructure exposure")
+    road_score: Optional[float] = Field(None, ge=0.0, le=1.0, description="Normalized road network exposure")
+    emergency_score: Optional[float] = Field(None, ge=0.0, le=1.0, description="Normalized emergency route exposure")
+    raw_counts: Dict[str, Any] = Field(default_factory=dict, description="Raw unnormalized physical counts")
     data_quality_flag: str = Field(
         default="COMPLETE",
         description="'COMPLETE', 'PARTIAL_RESCALED', 'DATA_INSUFFICIENT'",
     )
-
-
-class ExposureResult(BaseModel):
-    """Deterministic output for Algorithm 2 / Exposure calculation."""
-
-    zone_id: str
-    population_exposed: int = Field(..., ge=0)
-    infrastructure_value_at_risk_usd: float = Field(..., ge=0.0)
+    population_exposed: Optional[int] = Field(None, ge=0)
+    infrastructure_value_at_risk_usd: Optional[float] = Field(None, ge=0.0)
     critical_assets_exposed: List[str] = Field(default_factory=list)
 
 

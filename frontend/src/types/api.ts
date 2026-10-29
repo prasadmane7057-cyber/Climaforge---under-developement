@@ -19,7 +19,339 @@ export interface HealthResponse {
 export type UrgencyLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 export type IncidentStatus = 'NOT_SENT' | 'QUEUED' | 'ACKNOWLEDGED' | 'RESOLVED';
 export type AdvisoryStatus = 'ADVISORY_ACCEPTED' | 'FALLBACK' | 'DISABLED';
-export type RiskSeverity = 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL';
+export type RiskSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | 'MODERATE' | 'DATA_INSUFFICIENT';
+
+export interface FactorBreakdownItem {
+  factor_name: string;
+  factor_value: number;
+  effective_weight: number;
+  weighted_contribution: number;
+}
+
+export interface ZoneAnalysisResult {
+  zone_id: string;
+  name: string;
+  score: number | null;
+  raw_score?: number | null;
+  normalized_score: number | null;
+  severity: RiskSeverity;
+  dominant_cause: string | null;
+  breakdown: Record<string, FactorBreakdownItem>;
+  flags: string[];
+  status: string;
+  is_scorable: boolean;
+  is_hotspot: boolean;
+}
+
+export interface ExposureAnalysisResult {
+  zone_id: string;
+  name: string;
+  impact_score: number | null;
+  status: string;
+  flags: string[];
+  population_score: number | null;
+  infrastructure_score: number | null;
+  road_score: number | null;
+  emergency_score: number | null;
+  raw_counts: {
+    population?: number | null;
+    critical_infra?: number | null;
+    road_length_km?: number | null;
+    emergency_routes?: number | null;
+  };
+  effective_weights?: Record<string, number>;
+}
+
+export interface ConsequenceNodeData {
+  id: string;
+  label: string;
+  seed: boolean;
+  f: number;
+  pop: number;
+  infra: number;
+  emerg: number;
+  c: number;
+  category: string;
+}
+
+export interface ConsequenceEdgeData {
+  source: string;
+  target: string;
+  s: number;
+  dependency_type: string;
+}
+
+export interface ConsequenceGraphData {
+  node_count: number;
+  edge_count: number;
+  nodes: ConsequenceNodeData[];
+  edges: ConsequenceEdgeData[];
+}
+
+export interface CycleResolutionLog {
+  cycle: string[];
+  removed_edge: string[];
+  strength: number;
+  reason: string;
+}
+
+export interface NodeStateItem {
+  node_id: string;
+  label: string;
+  category: string;
+  risk_p: number;
+  vulnerability_f: number;
+  consequence_c: number;
+  state: 'FAILING' | 'WATCH' | 'SAFE';
+  strongest_incoming_predecessor?: string | null;
+  strongest_dependency_strength?: number;
+}
+
+export interface CascadeAnalysisResult {
+  seed_node: string;
+  seed_risk: number;
+  node_risks: Record<string, number>;
+  node_states: Record<string, NodeStateItem>;
+  failing_nodes: string[];
+  cascade_chain: string[];
+  cascade_length: number;
+  cascade_risk: number;
+  tau_applied: number;
+  cycle_logs: CycleResolutionLog[];
+  topological_order: string[];
+}
+
+export interface CriticalNodeItem {
+  rank: number;
+  node_id: string;
+  label: string;
+  category: string;
+  criticality_score: number;
+  raw_features: Record<string, number>;
+  scaled_features: Record<string, number>;
+  downstream_impact: number;
+  direct_risk: number;
+  dependency_count: number;
+}
+
+export interface CriticalNodesResult {
+  critical_node: string | null;
+  critical_node_details?: CriticalNodeItem | null;
+  ranked_nodes: CriticalNodeItem[];
+  scores: Record<string, number>;
+  weights_applied: Record<string, number>;
+  max_factors: Record<string, number>;
+}
+
+export interface BreakPointItem {
+  rank: number;
+  intervention_id: string;
+  action: string;
+  target_node: string;
+  mitigation_m: number;
+  required_resources: Record<string, number>;
+  cost_usd: number;
+  lead_time_minutes: number;
+  baseline_cascade_risk: number;
+  mitigated_cascade_risk: number;
+  impact_reduction_abs: number;
+  impact_reduction_rel: number;
+  impact_reduction_pct: number;
+  baseline_cascade_length: number;
+  mitigated_cascade_length: number;
+  cascade_length_delta: number;
+  mitigated_cascade_chain: string[];
+  surviving_nodes: string[];
+  target_node_risk_before: number;
+  target_node_risk_after: number;
+  target_node_exists: boolean;
+}
+
+export interface BreakPointsResult {
+  baseline: {
+    cascade_risk: number;
+    cascade_length: number;
+    cascade_chain: string[];
+    failing_nodes: string[];
+    node_risks: Record<string, number>;
+  };
+  best_break_point?: BreakPointItem | null;
+  ranked_break_points: BreakPointItem[];
+  evaluated_action_count: number;
+}
+
+// =====================================================================
+// Milestone 4: Resource Allocation, Intervention Ranking, What-If,
+// Alternative Comparison, Decision Card (Algorithms 8, 10–13)
+// =====================================================================
+
+export interface UnmetDemandItem {
+  zone_id: string;
+  resource_type: string;
+  needed: number;
+  granted: number;
+  status: string; // "UNAVAILABLE" | "PARTIAL"
+}
+
+export interface ResourceAllocationResult {
+  priority_scores: Record<string, number>;
+  zone_allocation_order: string[];
+  zone_budgets: Record<string, Record<string, number>>;
+  unmet_demand: UnmetDemandItem[];
+  remaining_inventory: Record<string, number>;
+  status: string;
+}
+
+export interface InterventionMeasures {
+  risk_reduction: number;
+  cascade_reduction: number;
+  population_protection: number;
+  emergency_protection: number;
+  resource_cost: number;
+  baseline_cascade_risk: number;
+  post_cascade_risk: number;
+  baseline_cascade_length: number;
+  post_cascade_length: number;
+  baseline_p_pop: number;
+  post_p_pop: number;
+  baseline_p_emerg: number;
+  post_p_emerg: number;
+}
+
+export interface FeasibleIntervention {
+  intervention_id: string;
+  action: string;
+  name: string;
+  target_node: string;
+  required_resources: Record<string, number>;
+  score: number;
+  measures: InterventionMeasures;
+  nugen_agreement: boolean | null;
+  cost_usd: number | null;
+  lead_time_minutes: number | null;
+}
+
+export interface InfeasibleIntervention {
+  intervention_id: string;
+  action: string;
+  name: string;
+  required_resources: Record<string, number>;
+  blockers: string[];
+}
+
+export interface InterventionRankingResult {
+  feasible: FeasibleIntervention[];
+  infeasible: InfeasibleIntervention[];
+  top_action: FeasibleIntervention | null;
+  nugen_recommendation: Record<string, unknown> | null;
+  nugen_agreement: boolean | null;
+  baseline_simulation: Record<string, unknown> | null;
+}
+
+export interface WhatIfMeasures {
+  impact_index: number;
+  cascade_length: number;
+  population_risk: number;
+  infrastructure_risk: number;
+  emergency_delay: number;
+}
+
+export interface WhatIfReduction {
+  absolute: number;
+  relative: number;
+}
+
+export interface WhatIfAnalysisResult {
+  before: WhatIfMeasures;
+  after: WhatIfMeasures;
+  reductions: Record<string, WhatIfReduction>;
+  intervention_applied: Record<string, unknown> | null;
+}
+
+export interface ComparisonRow {
+  intervention_id: string;
+  action_name: string;
+  score: number;
+  resource_cost: number;
+  impact_index: number;
+  cascade_length: number;
+  population_risk: number;
+  infrastructure_risk: number;
+  emergency_delay: number;
+  population_saved: number;
+  infrastructure_protected: number;
+}
+
+export interface AlternativeComparisonResult {
+  no_action_baseline: ComparisonRow;
+  rows: ComparisonRow[];
+  top_k: number;
+  alternatives_count: number;
+}
+
+export interface RejectedCandidate {
+  intervention_id: string;
+  blockers: string[];
+}
+
+export interface DecisionCardResult {
+  status: 'FEASIBLE' | 'NO_FEASIBLE_INTERVENTION';
+  priority: string;
+  zone_id: string;
+  target_node: string | null;
+  action: string | null;
+  intervention_id: string | null;
+  required_resources: Record<string, number>;
+  reason: string;
+  expected_impact: {
+    before: WhatIfMeasures;
+    after: WhatIfMeasures;
+    reductions: Record<string, WhatIfReduction>;
+  } | null;
+  modelled_relative_change: number | null;
+  quality_flags: string[];
+  ai_status: 'MOCK' | 'FALLBACK' | string;
+  nugen_recommendation: string | null;
+  nugen_agreement: boolean | null;
+  human_review_warning: string;
+  run_id: string;
+  blockers: string[];
+  rejected_candidates: RejectedCandidate[];
+}
+
+export interface ScenarioAnalysisResponse {
+  scenario_id: string;
+  scenario_name: string;
+  execution_timestamp: string;
+  spec_version: string;
+  data_label: string;
+  pipeline_status: 'SUCCESS' | 'MONITORING_ONLY' | 'PARTIAL_DATA' | 'DATA_INSUFFICIENT' | string;
+  is_monitoring_only: boolean;
+  hotspot_threshold_applied: number;
+  zone_count: number;
+  scorable_zone_count: number;
+  insufficient_zone_count: number;
+  hotspot_count: number;
+  highest_risk_score: number;
+  highest_risk_zone_name: string;
+  executed_algorithms: string[];
+  zones: ZoneAnalysisResult[];
+  hotspots: ZoneAnalysisResult[];
+  exposure_results: ExposureAnalysisResult[];
+  exposure_status?: string | null;
+  cascade_status?: 'SUCCESS' | 'SKIPPED_MONITORING_ONLY' | string | null;
+  consequence_graph?: ConsequenceGraphData | null;
+  cascade_analysis?: CascadeAnalysisResult | null;
+  critical_nodes?: CriticalNodesResult | null;
+  break_points?: BreakPointsResult | null;
+  // Milestone 4
+  resource_allocation?: ResourceAllocationResult | null;
+  intervention_ranking?: InterventionRankingResult | null;
+  what_if_analysis?: WhatIfAnalysisResult | null;
+  alternative_comparison?: AlternativeComparisonResult | null;
+  decision_card?: DecisionCardResult | null;
+  data_quality_flags: string[];
+}
 
 export interface ZoneInput {
   zone_id: string;

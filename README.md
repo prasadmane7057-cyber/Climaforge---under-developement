@@ -127,13 +127,13 @@ cd ..
 
 ### 1. Execute Backend Tests
 
-Run `pytest` to verify the `/health` endpoint and all Pydantic domain contracts:
+Run `pytest` to verify the `/health` endpoint, Pydantic domain contracts, and all Milestone 2, 3 & 4 calculation and decision modules (Algorithms 0–13):
 
 ```powershell
-.\backend\.venv\Scripts\pytest backend
+.\backend\.venv\Scripts\pytest backend\tests
 ```
 
-Expected output: `20 passed in ~1s`.
+Expected output: `135 passed in ~1s`.
 
 ### 2. Verify Frontend Production Build
 
@@ -145,7 +145,7 @@ npm run build
 cd ..
 ```
 
-Expected output: `✓ built in ~600ms` with 0 TypeScript diagnostics.
+Expected output: `✓ built in ~1s` with 0 TypeScript diagnostics.
 
 ---
 
@@ -157,11 +157,13 @@ Run the backend and frontend services in separate Windows PowerShell terminals:
 
 ```powershell
 cd "C:\Users\Aditya\Desktop\Climaforge Workspace"
-.\backend\.venv\Scripts\python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+.\backend\.venv\Scripts\python -m uvicorn app.main:app --app-dir backend --host 0.0.0.0 --port 8000 --reload
 ```
 
 - **Health Diagnostics**: [http://localhost:8000/health](http://localhost:8000/health)
 - **Interactive OpenAPI Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Scenarios Endpoint**: [http://localhost:8000/api/scenarios](http://localhost:8000/api/scenarios)
+- **Scenario Analysis Endpoint**: `POST http://localhost:8000/api/scenarios/{scenario_id}/analyze`
 
 ### Terminal 2: Frontend Service (Port 5173)
 
@@ -170,39 +172,32 @@ cd "C:\Users\Aditya\Desktop\Climaforge Workspace\frontend"
 npm run dev
 ```
 
-- **Operations Starter Screen**: [http://localhost:5173](http://localhost:5173)
+- **Operations Dashboard**: [http://localhost:5173](http://localhost:5173)
 
 ---
 
-## Verifying End-to-End Health in PowerShell
+## Demonstrating Milestone 2 in the Operations Dashboard
 
-While the backend is running, verify the `/health` endpoint using PowerShell `Invoke-RestMethod`:
-
-```powershell
-Invoke-RestMethod -Uri "http://localhost:8000/health" | ConvertTo-Json -Depth 4
-```
-
-Example response:
-```json
-{
-  "status": "healthy",
-  "app_name": "CLIMAFORGE Backend",
-  "version": "0.1.0",
-  "environment": "development",
-  "timestamp": "2026-10-28T12:50:00.000Z",
-  "subsystems": {
-    "api_server": "operational",
-    "deterministic_calculation_core": "ready",
-    "nugen_advisory_layer": "mock_provider (advisory only)",
-    "persistence": "ready (in-memory / sqlite)"
-  },
-  "disclaimer": "SYNTHETIC / ILLUSTRATIVE DATA ONLY — Milestone 0 Prototype"
-}
-```
+1. Launch both backend (port 8000) and frontend (port 5173).
+2. Open [http://localhost:5173](http://localhost:5173). The top bar indicates `BACKEND CORE ONLINE (HTTP 200)`.
+3. In the scenario dropdown on the **Overview** tab, select **"Severe Flash Flood Surge (Zone Inundation)"** or **"Moderate Monsoon Inflow (48h Warning)"**.
+4. Click the blue **"Run Flood Analysis"** button in the control bar.
+5. Observe the live deterministic results:
+   - **KPI Cards** update with calculated Peak Risk Index (0–100 scale), evaluated zones count, and qualified priority hotspots.
+   - **Catchment Zone Table** updates with authoritative 0–100 risk scores, normalized `[0.0-1.0]` indices, canonical severity bands (`CRITICAL`, `HIGH`, `MEDIUM`, `LOW`), hotspot tags (score &ge; 50.0), and the dominant critical cause (e.g. Rainfall Inundation, Drainage Constriction).
+   - **Algorithm 3 Exposure Panel** renders multi-factor vulnerability assessment (`ImpactScore` [0.0–1.0], Population, Infrastructure, Arterial Roads, and Emergency Corridors) for all qualified hotspots.
+6. Select **"Dry Season Baseline (Nominal Flow)"** and click **"Run Flood Analysis"**:
+   - Notice the status updates to `MONITORING_ONLY` (0 hotspots qualified).
+   - A verified notification explains that downstream exposure and cascade analysis is safely suspended per Algorithm 2 specification.
+7. Open the **Audit Log** tab from the sidebar to inspect the authentic `ANALYSIS_RUN` event recorded on the backend.
 
 ---
 
-## Milestone 0 Status & Next Phase
+## Milestone 2 Implementation Overview
 
-- **Milestone 0**: Complete. Monorepo established, schemas validated, `/health` implemented, frontend connection screen built and verified.
-- **Milestone 1**: Dashboard Shell and Navigation (scheduled next).
+CLIMAFORGE Milestone 2 implements the pure deterministic risk engine covering Algorithms 0–3:
+- **Algorithm 0 (`alg0_data_prep.py`)**: Type/bounds validation, fixed reference range normalization, missing required feature handling (`DATA_INSUFFICIENT`), and missing optional feature tracking.
+- **Algorithm 1 (`alg1_flood_risk.py`)**: Deterministic 0–100 FloodRisk score calculation, dynamic weight rescaling when optional inputs are omitted, canonical severity bands (`CRITICAL` &ge;75, `HIGH` &ge;50, `MEDIUM` &ge;25, `LOW` <25), and explainable factor breakdown.
+- **Algorithm 2 (`alg2_hotspots.py`)**: Priority hotspot ranking at threshold 50.0; zero qualified zones triggers `MONITORING_ONLY` state and halts downstream analysis.
+- **Algorithm 3 (`alg3_exposure.py`)**: Multi-factor impact and exposure calculation for hotspots only (weights: Population 0.35, Infrastructure 0.25, Road Network 0.20, Emergency Corridors 0.20), clearly separating normalized indices from raw physical counts.
+- **API & UI Integration**: `POST /api/scenarios/{id}/analyze` and `POST /api/scenarios/run/adhoc` endpoints fully wired to the interactive operational dashboard.
