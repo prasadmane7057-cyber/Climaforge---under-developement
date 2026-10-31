@@ -38,6 +38,7 @@ export const App: React.FC = () => {
   // Audit trail state
   const [auditLogs, setAuditLogs] = useState<AuditEvent[]>([]);
   const [isLoadingAudit, setIsLoadingAudit] = useState<boolean>(false);
+  const [auditError, setAuditError] = useState<string | null>(null);
 
   // Milestone 2 Deterministic Risk Analysis State
   const [analysisResult, setAnalysisResult] = useState<ScenarioAnalysisResponse | null>(null);
@@ -57,11 +58,12 @@ export const App: React.FC = () => {
   // 2. Load audit logs
   const loadAuditLogs = useCallback(async () => {
     setIsLoadingAudit(true);
+    setAuditError(null);
     try {
       const logs = await fetchAuditLogs();
       setAuditLogs(logs);
-    } catch {
-      // If backend is unreachable, keep existing logs
+    } catch (err) {
+      setAuditError(err instanceof Error ? err.message : 'Failed to load the audit trail from backend.');
     } finally {
       setIsLoadingAudit(false);
     }
@@ -168,6 +170,10 @@ export const App: React.FC = () => {
           isCheckingHealth={isCheckingHealth}
           onRefreshHealth={refreshHealth}
           scenarioName={scenarioDetail?.name}
+          scenarios={scenarios}
+          selectedScenarioId={selectedScenarioId}
+          onSelectScenario={loadScenario}
+          isLoadingScenario={isLoadingScenario}
         />
 
         <main className="dashboard-content-scroll">
@@ -199,18 +205,27 @@ export const App: React.FC = () => {
               isAnalyzing={isAnalyzing}
               analysisError={analysisError}
               onRunAnalysis={handleRunAnalysis}
+              onNavigateTab={handleSelectTab}
             />
           )}
 
           {activeTab === 'risk-map' && (
-            <RiskMapTab scenarioDetail={scenarioDetail} />
+            <RiskMapTab
+              scenarioDetail={scenarioDetail}
+              analysisResult={analysisResult}
+              isLoadingScenario={isLoadingScenario}
+              isAnalyzing={isAnalyzing}
+              analysisError={analysisError}
+            />
           )}
 
           {activeTab === 'consequence-graph' && (
             <ConsequenceGraphTab
               scenarioDetail={scenarioDetail}
               analysisResult={analysisResult}
+              isLoadingScenario={isLoadingScenario}
               isAnalyzing={isAnalyzing}
+              analysisError={analysisError}
               onRunAnalysis={handleRunAnalysis}
             />
           )}
@@ -225,12 +240,15 @@ export const App: React.FC = () => {
             />
           )}
 
-          {activeTab === 'emergency-chatbot' && <EmergencyChatbotTab />}
+          {activeTab === 'emergency-chatbot' && (
+            <EmergencyChatbotTab backendOnline={!!healthResult?.success} />
+          )}
 
           {activeTab === 'audit-log' && (
             <AuditLogTab
               auditLogs={auditLogs}
               isLoading={isLoadingAudit}
+              error={auditError}
               onRefresh={loadAuditLogs}
             />
           )}
@@ -239,7 +257,7 @@ export const App: React.FC = () => {
         {/* Global Footer */}
         <footer className="operations-footer">
           <div className="footer-left">
-            <span>CLIMAFORGE Prototype &bull; Milestone 1: Operational Dashboard</span>
+            <span>CLIMAFORGE &bull; Hazard Decision Support</span>
           </div>
           <div className="footer-right">
             <span>Deterministic Algorithms 0&ndash;13 &bull; Nugen Advisory AI (Standby) &bull; React 19 + FastAPI</span>

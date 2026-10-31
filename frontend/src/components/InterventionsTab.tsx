@@ -1,4 +1,5 @@
 import React from 'react';
+import { Activity, AlertTriangle, CheckCircle2, Info, Package, ShieldCheck } from 'lucide-react';
 import type {
   ScenarioDetail,
   ScenarioAnalysisResponse,
@@ -18,539 +19,319 @@ interface InterventionsTabProps {
   onRunAnalysis?: () => void;
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+function fmt(value: number, decimals = 3): string {
+  return value.toFixed(decimals);
+}
 
 function pct(value: number): string {
   return `${(value * 100).toFixed(1)}%`;
 }
 
-function fmt(value: number, decimals = 3): string {
-  return value.toFixed(decimals);
+function ResourceTags({ resources }: { resources: Record<string, number> }) {
+  const entries = Object.entries(resources);
+  if (!entries.length) return <span className="m7-muted-value">None recorded</span>;
+  return (
+    <div className="m7-resource-tags">
+      {entries.map(([resource, quantity]) => (
+        <span key={resource}><strong>{resource}</strong>{quantity}</span>
+      ))}
+    </div>
+  );
 }
-
-function resourceTags(resources: Record<string, number>): React.ReactNode {
-  return Object.entries(resources).map(([sku, qty]) => (
-    <span key={sku} className="sku-tag">
-      {sku}: <strong>{qty}</strong>
-    </span>
-  ));
-}
-
-// ── Sub-components ────────────────────────────────────────────────────────────
-
-const DataDisclaimer: React.FC = () => (
-  <div className="data-disclaimer-bar" style={{ marginBottom: '1rem', padding: '0.5rem 1rem', background: '#1a1a2e', borderLeft: '4px solid #f59e0b', borderRadius: '4px' }}>
-    <strong style={{ color: '#f59e0b' }}>⚠ SYNTHETIC / ILLUSTRATIVE DATA ONLY</strong>
-    <span style={{ color: '#9ca3af', marginLeft: '0.75rem', fontSize: '0.85rem' }}>
-      All values are produced by a prototype model using simulated zone data. Not for operational use.
-    </span>
-  </div>
-);
-
-// ── Resource Allocation Panel ─────────────────────────────────────────────────
 
 const ResourceAllocationPanel: React.FC<{ data: ResourceAllocationResult }> = ({ data }) => {
-  const primaryZone = data.zone_allocation_order[0];
-  const budget = primaryZone ? data.zone_budgets[primaryZone] : null;
-  const score = primaryZone ? data.priority_scores[primaryZone] : null;
+  const unmet = data.unmet_demand.filter((item) => item.granted < item.needed);
+  const inventoryEntries = Object.entries(data.remaining_inventory);
 
   return (
-    <div className="dashboard-card" style={{ marginBottom: '1.5rem' }}>
-      <div className="card-header-row">
+    <section className="dashboard-card m7-card">
+      <div className="card-header-row m7-card-header">
         <div>
-          <h3 className="card-heading-sm">Algorithm 8 — Resource Priority & Depot Allocation</h3>
-          <p className="card-subheading">
-            Zones ranked by PriorityScore; depot resources granted greedily in descending order.
-          </p>
+          <span className="m7-card-kicker">Algorithm 8</span>
+          <h3>Resource allocation</h3>
+          <p>Backend-ranked zone priority and depot inventory allocation.</p>
         </div>
-        <span className={`badge-${data.status === 'SUCCESS' ? 'nominal' : 'warn'}`}>
+        <span className={`m7-status-pill ${data.status === 'SUCCESS' ? 'm7-success' : 'm7-warning'}`}>
           {data.status}
         </span>
       </div>
 
-      {/* Allocation order */}
-      <div style={{ marginBottom: '1rem' }}>
-        <strong style={{ color: '#9ca3af', fontSize: '0.8rem' }}>ALLOCATION ORDER</strong>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.4rem' }}>
-          {data.zone_allocation_order.map((zid, i) => (
-            <span key={zid} className="zone-id-tag">
-              {i + 1}. {zid} — score: {fmt(data.priority_scores[zid] ?? 0, 4)}
-            </span>
-          ))}
+      <div className="m7-resource-layout">
+        <div className="m7-resource-column">
+          <div className="m7-panel-label">Allocation priority</div>
+          <div className="m7-allocation-order">
+            {data.zone_allocation_order.map((zoneId, index) => (
+              <div className="m7-allocation-row" key={zoneId}>
+                <span className="m7-rank-number">{index + 1}</span>
+                <div><strong>{zoneId}</strong><small>Priority score</small></div>
+                <code>{fmt(data.priority_scores[zoneId] ?? 0, 4)}</code>
+              </div>
+            ))}
+            {!data.zone_allocation_order.length && <div className="m7-empty-inline">No allocation priority data.</div>}
+          </div>
+        </div>
+
+        <div className="m7-resource-column m7-zone-budget">
+          <div className="m7-panel-label">Zone grants</div>
+          <div className="m7-budget-list">
+            {data.zone_allocation_order.map((zoneId) => {
+              const budget = data.zone_budgets[zoneId];
+              return (
+                <div className="m7-budget-row" key={zoneId}>
+                  <strong>{zoneId}</strong>
+                  {budget ? <ResourceTags resources={budget} /> : <span className="m7-muted-value">No grant recorded</span>}
+                </div>
+              );
+            })}
+            {!data.zone_allocation_order.length && <div className="m7-empty-inline">No zone budgets returned.</div>}
+          </div>
+        </div>
+
+        <div className="m7-resource-column">
+          <div className="m7-panel-label">Remaining inventory</div>
+          {inventoryEntries.length ? (
+            <div className="m7-inventory-grid">
+              {inventoryEntries.map(([resource, quantity]) => (
+                <div key={resource}><span>{resource}</span><strong>{quantity}</strong></div>
+              ))}
+            </div>
+          ) : <div className="m7-empty-inline">No inventory values returned.</div>}
         </div>
       </div>
 
-      {/* Budget table */}
-      {primaryZone && budget && (
-        <div style={{ marginBottom: '1rem' }}>
-          <strong style={{ color: '#9ca3af', fontSize: '0.8rem' }}>
-            GRANTED BUDGET — {primaryZone}
-            {score !== null && (
-              <span style={{ marginLeft: '0.5rem', color: '#6b7280' }}>
-                (PriorityScore: {fmt(score, 4)})
-              </span>
-            )}
-          </strong>
-          <div className="table-responsive" style={{ marginTop: '0.4rem' }}>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Resource Type</th>
-                  <th>Granted</th>
-                  <th>Remaining in Depot</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(budget).map(([resource, granted]) => (
-                  <tr key={resource}>
-                    <td>{resource}</td>
-                    <td>
-                      <code className="score-code">{granted}</code>
-                    </td>
-                    <td>{data.remaining_inventory[resource] ?? 0}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Unmet demand warnings */}
-      {data.unmet_demand.filter(u => u.needed > u.granted).length > 0 && (
-        <div style={{ background: '#1f1515', border: '1px solid #7f1d1d', borderRadius: '6px', padding: '0.75rem', marginTop: '0.5rem' }}>
-          <strong style={{ color: '#f87171', fontSize: '0.85rem' }}>⚠ UNMET DEMAND</strong>
-          <ul style={{ margin: '0.4rem 0 0', paddingLeft: '1.2rem', color: '#fca5a5', fontSize: '0.85rem' }}>
-            {data.unmet_demand.filter(u => u.needed > u.granted).map((u, i) => (
-              <li key={i}>
-                {u.zone_id}: {u.resource_type} — need {u.needed}, granted {u.granted} ({u.status})
-              </li>
+      <div className={`m7-demand-summary ${unmet.length ? 'has-unmet' : ''}`}>
+        <div><AlertTriangle size={18} /><strong>{unmet.length ? 'Unmet demand' : 'Demand status'}</strong></div>
+        {unmet.length ? (
+          <div className="m7-demand-list">
+            {unmet.map((item, index) => (
+              <div key={`${item.zone_id}-${item.resource_type}-${index}`}>
+                <strong>{item.zone_id}</strong>
+                <span>{item.resource_type}</span>
+                <code>needed {item.needed} · granted {item.granted}</code>
+                <em>{item.status}</em>
+              </div>
             ))}
-          </ul>
-        </div>
-      )}
-    </div>
+          </div>
+        ) : <span>No unmet demand is recorded in the allocation result.</span>}
+      </div>
+    </section>
   );
 };
-
-// ── Intervention Ranking Panel ────────────────────────────────────────────────
 
 const InterventionRankingPanel: React.FC<{
   feasible: FeasibleIntervention[];
   infeasible: InfeasibleIntervention[];
   nugenRecommended: string | null;
 }> = ({ feasible, infeasible, nugenRecommended }) => {
-  const maxScore = feasible.length > 0 ? Math.max(...feasible.map(f => f.score)) : 1;
+  const maxScore = feasible.length ? Math.max(...feasible.map((item) => item.score)) : 1;
 
   return (
-    <div className="dashboard-card" style={{ marginBottom: '1.5rem' }}>
-      <div className="card-header-row">
+    <section className="dashboard-card m7-card">
+      <div className="card-header-row m7-card-header">
         <div>
-          <h3 className="card-heading-sm">Algorithm 10 — Intervention Priority Ranking</h3>
-          <p className="card-subheading">
-            Multi-criteria score: 30% RiskRed + 25% CascRed + 20% PopProt + 15% EmergProt − 10% Cost
-          </p>
+          <span className="m7-card-kicker">Algorithm 10</span>
+          <h3>Intervention ranking</h3>
+          <p>Deterministic backend ranking with feasibility verification.</p>
         </div>
-        <span className="badge-nominal">{feasible.length} feasible</span>
+        <span className="m7-count-pill">{feasible.length} feasible · {infeasible.length} infeasible</span>
       </div>
 
-      {/* Feasible interventions */}
-      {feasible.length > 0 && (
-        <div style={{ marginBottom: '1rem' }}>
-          <strong style={{ color: '#9ca3af', fontSize: '0.8rem' }}>FEASIBLE — RANKED</strong>
-          {feasible.map((f, i) => {
-            const barWidth = maxScore > 0 ? (f.score / maxScore) * 100 : 0;
-            const isNugenPick = f.intervention_id === nugenRecommended;
+      {feasible.length ? (
+        <div className="m7-ranking-list">
+          {feasible.map((item, index) => {
+            const barWidth = maxScore > 0 ? (item.score / maxScore) * 100 : 0;
+            const isModelTop = index === 0;
+            const isNugenPick = item.intervention_id === nugenRecommended;
             return (
-              <div key={f.intervention_id} style={{
-                background: '#111827',
-                border: i === 0 ? '1px solid #22c55e' : '1px solid #374151',
-                borderRadius: '6px',
-                padding: '0.75rem 1rem',
-                marginTop: '0.5rem',
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                    <span className="zone-id-tag" style={{ background: i === 0 ? '#14532d' : '#1f2937' }}>
-                      #{i + 1} {f.intervention_id}
-                    </span>
-                    <span style={{ color: '#e5e7eb', fontSize: '0.9rem', fontWeight: 600 }}>{f.name}</span>
-                    {isNugenPick && (
-                      <span style={{ background: '#1e3a5f', color: '#60a5fa', padding: '0.1rem 0.5rem', borderRadius: '999px', fontSize: '0.75rem' }}>
-                        🤖 AI Pick
-                      </span>
-                    )}
-                    {i === 0 && !isNugenPick && (
-                      <span style={{ background: '#14532d', color: '#86efac', padding: '0.1rem 0.5rem', borderRadius: '999px', fontSize: '0.75rem' }}>
-                        ✓ Model Top-Ranked
-                      </span>
-                    )}
+              <article className={`m7-ranking-row ${isModelTop ? 'is-recommended' : ''}`} key={item.intervention_id}>
+                <div className="m7-ranking-heading">
+                  <span className="m7-rank-number">{index + 1}</span>
+                  <div className="m7-ranking-title">
+                    <strong>{item.name || item.action}</strong>
+                    <div><code>{item.intervention_id}</code><span>Target {item.target_node || 'Not specified'}</span></div>
                   </div>
-                  <code className="score-code">{fmt(f.score, 4)}</code>
+                  <div className="m7-score-block">
+                    <span>Model score</span>
+                    <strong>{fmt(item.score, 4)}</strong>
+                  </div>
                 </div>
-
-                {/* Score bar */}
-                <div style={{ height: '4px', background: '#374151', borderRadius: '2px', marginBottom: '0.5rem' }}>
-                  <div style={{ height: '100%', width: `${barWidth}%`, background: i === 0 ? '#22c55e' : '#3b82f6', borderRadius: '2px', transition: 'width 0.5s ease' }} />
+                <div className="m7-score-track"><span style={{ width: `${barWidth}%` }} /></div>
+                <div className="m7-ranking-badges">
+                  {isModelTop && <span className="m7-model-tag"><CheckCircle2 size={12} />Model top-ranked</span>}
+                  {isNugenPick && <span className="m7-advisory-tag">Nugen advisory match</span>}
+                  <span className="m7-feasible-tag">Feasible</span>
                 </div>
-
-                {/* Measures grid */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.5rem', fontSize: '0.78rem', color: '#9ca3af' }}>
-                  <div><div style={{ color: '#6ee7b7' }}>{pct(f.measures.risk_reduction)}</div>RiskRed</div>
-                  <div><div style={{ color: '#93c5fd' }}>{pct(f.measures.cascade_reduction)}</div>CascRed</div>
-                  <div><div style={{ color: '#c4b5fd' }}>{pct(f.measures.population_protection)}</div>PopProt</div>
-                  <div><div style={{ color: '#fcd34d' }}>{pct(f.measures.emergency_protection)}</div>EmergProt</div>
-                  <div><div style={{ color: '#f87171' }}>{pct(f.measures.resource_cost)}</div>Cost</div>
+                <div className="m7-measure-grid">
+                  <div><span>Risk reduction</span><strong>{pct(item.measures.risk_reduction)}</strong></div>
+                  <div><span>Cascade reduction</span><strong>{pct(item.measures.cascade_reduction)}</strong></div>
+                  <div><span>Population protected</span><strong>{pct(item.measures.population_protection)}</strong></div>
+                  <div><span>Emergency protected</span><strong>{pct(item.measures.emergency_protection)}</strong></div>
+                  <div><span>Resource cost</span><strong>{pct(item.measures.resource_cost)}</strong></div>
                 </div>
-
-                {/* Resources & meta */}
-                <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap', fontSize: '0.78rem', color: '#6b7280' }}>
-                  <span>🎯 {f.target_node}</span>
-                  {f.cost_usd && <span>💰 ${f.cost_usd.toLocaleString()}</span>}
-                  {f.lead_time_minutes && <span>⏱ {f.lead_time_minutes} min</span>}
-                  <div className="resource-demand-tags">{resourceTags(f.required_resources)}</div>
+                <div className="m7-ranking-meta">
+                  {item.cost_usd != null && <span>Cost <strong>${item.cost_usd.toLocaleString()}</strong></span>}
+                  {item.lead_time_minutes != null && <span>Lead time <strong>{item.lead_time_minutes} min</strong></span>}
+                  <div><span>Required resources</span><ResourceTags resources={item.required_resources} /></div>
                 </div>
-              </div>
+              </article>
             );
           })}
         </div>
+      ) : (
+        <div className="m7-empty-inline m7-empty-section">No feasible interventions were returned.</div>
       )}
 
-      {/* Infeasible interventions */}
       {infeasible.length > 0 && (
-        <div>
-          <strong style={{ color: '#9ca3af', fontSize: '0.8rem' }}>INFEASIBLE (resource shortfall)</strong>
-          {infeasible.map(inf => (
-            <div key={inf.intervention_id} style={{
-              background: '#1a0a0a',
-              border: '1px solid #7f1d1d',
-              borderRadius: '6px',
-              padding: '0.6rem 1rem',
-              marginTop: '0.4rem',
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span className="zone-id-tag" style={{ background: '#450a0a', color: '#fca5a5' }}>{inf.intervention_id}</span>
-                <span style={{ color: '#e5e7eb', fontSize: '0.85rem' }}>{inf.name}</span>
-              </div>
-              <ul style={{ margin: '0.3rem 0 0', paddingLeft: '1.2rem', color: '#f87171', fontSize: '0.78rem' }}>
-                {inf.blockers.map((b, i) => <li key={i}>{b}</li>)}
-              </ul>
+        <div className="m7-infeasible-list">
+          <div className="m7-panel-label">Feasibility blockers</div>
+          {infeasible.map((item) => (
+            <div className="m7-infeasible-row" key={item.intervention_id}>
+              <div><strong>{item.name || item.action}</strong><code>{item.intervention_id}</code></div>
+              <ul>{item.blockers.map((blocker, index) => <li key={`${blocker}-${index}`}>{blocker}</li>)}</ul>
+              {!!Object.keys(item.required_resources).length && (
+                <div><span>Required resources</span><ResourceTags resources={item.required_resources} /></div>
+              )}
             </div>
           ))}
         </div>
       )}
-    </div>
+    </section>
   );
 };
-
-// ── What-If Before/After Panel ────────────────────────────────────────────────
 
 type WhatIfKey = 'impact_index' | 'cascade_length' | 'population_risk' | 'infrastructure_risk' | 'emergency_delay';
 
-interface WhatIfRowDef {
-  key: WhatIfKey;
-  label: string;
-  color: string;
-  isInt?: boolean;
-}
-
 const WhatIfPanel: React.FC<{ data: WhatIfAnalysisResult }> = ({ data }) => {
-  const rows: WhatIfRowDef[] = [
-    { key: 'impact_index', label: 'Impact Index (CascadeRisk)', color: '#f87171' },
-    { key: 'cascade_length', label: 'Cascade Length (failing nodes)', color: '#fb923c', isInt: true },
-    { key: 'population_risk', label: 'Population Risk (p_Pop)', color: '#c4b5fd' },
-    { key: 'infrastructure_risk', label: 'Infrastructure Risk (weighted avg)', color: '#93c5fd' },
-    { key: 'emergency_delay', label: 'Emergency Delay Proxy (p_Emerg)', color: '#fcd34d' },
+  const rows: { key: WhatIfKey; label: string; isInt?: boolean }[] = [
+    { key: 'impact_index', label: 'Impact index' },
+    { key: 'cascade_length', label: 'Cascade length', isInt: true },
+    { key: 'population_risk', label: 'Population risk' },
+    { key: 'infrastructure_risk', label: 'Infrastructure risk' },
+    { key: 'emergency_delay', label: 'Emergency delay' },
   ];
 
   return (
-    <div className="dashboard-card" style={{ marginBottom: '1.5rem' }}>
-      <h3 className="card-heading-sm" style={{ marginBottom: '0.25rem' }}>
-        Algorithm 11 — What-If Simulation (Before / After)
-      </h3>
-      <p className="card-subheading" style={{ marginBottom: '1rem' }}>
-        Paired baseline + top-ranked intervention runs via shared simulate(). Graph is not mutated.
-      </p>
-
+    <section className="dashboard-card m7-card">
+      <div className="card-header-row m7-card-header">
+        <div><span className="m7-card-kicker">Algorithm 11</span><h3>What-if comparison</h3><p>Baseline and selected intervention simulated separately; baseline data is not mutated.</p></div>
+      </div>
       <div className="table-responsive">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Measure</th>
-              <th>Before (Baseline)</th>
-              <th>After (Intervention)</th>
-              <th>Abs Δ</th>
-              <th>Rel Reduction</th>
-            </tr>
-          </thead>
+        <table className="data-table m7-table">
+          <thead><tr><th>Measure</th><th>Baseline</th><th>Selected intervention</th><th>Absolute change</th><th>Relative reduction</th></tr></thead>
           <tbody>
-            {rows.map(({ key, label, color, isInt }) => {
-              const before = data.before[key as keyof typeof data.before] as number;
-              const after = data.after[key as keyof typeof data.after] as number;
-              const red = data.reductions[key];
+            {rows.map(({ key, label, isInt }) => {
+              const before = data.before[key];
+              const after = data.after[key];
+              const reduction = data.reductions[key];
               return (
                 <tr key={key}>
-                  <td style={{ color, fontWeight: 500 }}>{label}</td>
-                  <td><code className="score-code">{isInt ? before : fmt(before)}</code></td>
-                  <td><code className="score-code">{isInt ? after : fmt(after)}</code></td>
-                  <td style={{ color: '#6ee7b7' }}>
-                    {red ? (isInt ? Math.round(red.absolute) : fmt(red.absolute)) : '—'}
-                  </td>
-                  <td>
-                    {red ? (
-                      <span style={{
-                        color: red.relative > 0 ? '#22c55e' : '#9ca3af',
-                        fontWeight: 600,
-                      }}>
-                        {pct(red.relative)}
-                      </span>
-                    ) : '—'}
-                  </td>
+                  <td><strong>{label}</strong></td>
+                  <td><code>{isInt ? before : fmt(before)}</code></td>
+                  <td><code>{isInt ? after : fmt(after)}</code></td>
+                  <td>{reduction ? (isInt ? fmt(reduction.absolute, 0) : fmt(reduction.absolute)) : 'Not returned'}</td>
+                  <td>{reduction ? <span className="m7-reduction">{pct(reduction.relative)}</span> : 'Not returned'}</td>
                 </tr>
               );
             })}
           </tbody>
         </table>
       </div>
-    </div>
+    </section>
   );
 };
 
-// ── Alternative Comparison Table ──────────────────────────────────────────────
-
-const AlternativeComparisonPanel: React.FC<{
-  noAction: ComparisonRow;
-  rows: ComparisonRow[];
-}> = ({ noAction, rows }) => {
+const AlternativeComparisonPanel: React.FC<{ noAction: ComparisonRow; rows: ComparisonRow[] }> = ({ noAction, rows }) => {
   const allRows = [noAction, ...rows];
-
   return (
-    <div className="dashboard-card" style={{ marginBottom: '1.5rem' }}>
-      <h3 className="card-heading-sm" style={{ marginBottom: '0.25rem' }}>
-        Algorithm 12 — Alternative Intervention Comparison
-      </h3>
-      <p className="card-subheading" style={{ marginBottom: '1rem' }}>
-        Top-K feasible alternatives vs. no-action baseline, all derived from shared simulate().
-      </p>
-
+    <section className="dashboard-card m7-card">
+      <div className="card-header-row m7-card-header">
+        <div><span className="m7-card-kicker">Algorithm 12</span><h3>Alternative comparison</h3><p>Top alternatives compared against the no-action baseline.</p></div>
+      </div>
       <div className="table-responsive">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Action</th>
-              <th>Score</th>
-              <th>Impact Index</th>
-              <th>Cascade Len</th>
-              <th>Pop Risk</th>
-              <th>Infra Risk</th>
-              <th>Emerg Delay</th>
-              <th>Pop Saved</th>
-              <th>Infra Protected</th>
-              <th>Resource Cost</th>
-            </tr>
-          </thead>
+        <table className="data-table m7-table">
+          <thead><tr><th>Action</th><th>Score</th><th>Impact index</th><th>Cascade length</th><th>Population risk</th><th>Infrastructure risk</th><th>Emergency delay</th><th>Population saved</th><th>Infrastructure protected</th><th>Resource cost</th></tr></thead>
           <tbody>
-            {allRows.map((row, i) => {
-              const isNoAction = row.intervention_id === 'NO_ACTION';
+            {allRows.map((row) => {
+              const isBaseline = row.intervention_id === 'NO_ACTION';
               return (
-                <tr key={row.intervention_id} style={i === 1 ? { background: '#0d1f15' } : {}}>
-                  <td className="cell-primary">
-                    <span className="zone-id-tag" style={isNoAction ? { background: '#374151' } : {}}>
-                      {row.intervention_id}
-                    </span>
-                    <span className="zone-name-text">{row.action_name}</span>
-                  </td>
-                  <td>
-                    <code className="score-code">{isNoAction ? '—' : fmt(row.score, 4)}</code>
-                  </td>
-                  <td>{fmt(row.impact_index)}</td>
-                  <td>{row.cascade_length}</td>
-                  <td>{fmt(row.population_risk)}</td>
-                  <td>{fmt(row.infrastructure_risk)}</td>
-                  <td>{fmt(row.emergency_delay)}</td>
-                  <td style={{ color: '#6ee7b7' }}>{isNoAction ? '—' : fmt(row.population_saved)}</td>
-                  <td style={{ color: '#93c5fd' }}>{isNoAction ? '—' : fmt(row.infrastructure_protected)}</td>
-                  <td>{isNoAction ? '—' : pct(row.resource_cost)}</td>
+                <tr key={row.intervention_id} className={isBaseline ? 'm7-baseline-row' : ''}>
+                  <td><strong>{row.action_name}</strong><small className="m7-table-code">{row.intervention_id}</small>{isBaseline && <span className="m7-baseline-tag">Baseline</span>}</td>
+                  <td><code>{isBaseline ? 'Not applicable' : fmt(row.score, 4)}</code></td>
+                  <td><code>{fmt(row.impact_index)}</code></td><td>{row.cascade_length}</td>
+                  <td>{fmt(row.population_risk)}</td><td>{fmt(row.infrastructure_risk)}</td><td>{fmt(row.emergency_delay)}</td>
+                  <td>{isBaseline ? 'Not applicable' : fmt(row.population_saved)}</td>
+                  <td>{isBaseline ? 'Not applicable' : fmt(row.infrastructure_protected)}</td>
+                  <td>{isBaseline ? 'Not applicable' : pct(row.resource_cost)}</td>
                 </tr>
               );
             })}
           </tbody>
         </table>
       </div>
-    </div>
+    </section>
   );
 };
-
-// ── Command Decision Card ─────────────────────────────────────────────────────
 
 const DecisionCardPanel: React.FC<{ card: DecisionCardResult }> = ({ card }) => {
   const isFeasible = card.status === 'FEASIBLE';
-
   return (
-    <div className="dashboard-card" style={{
-      border: isFeasible ? '2px solid #22c55e' : '2px solid #ef4444',
-      marginBottom: '1.5rem',
-    }}>
-      <div className="card-header-row" style={{ marginBottom: '0.75rem' }}>
-        <div>
-          <h3 className="card-heading-sm">Algorithm 13 — Command Decision Card</h3>
-          <p className="card-subheading">Final verified operational recommendation</p>
-        </div>
-        <span className={isFeasible ? 'badge-nominal' : 'badge-critical'}>
-          {card.status}
-        </span>
+    <section className={`dashboard-card m7-card m7-decision-card ${isFeasible ? 'm7-decision-feasible' : 'm7-decision-fallback'}`}>
+      <div className="card-header-row m7-card-header">
+        <div><span className="m7-card-kicker">Algorithm 13</span><h3>Command decision card</h3><p>Deterministic model output for human review and verification.</p></div>
+        <span className={`m7-status-pill ${isFeasible ? 'm7-success' : 'm7-danger'}`}>{card.status}</span>
       </div>
 
-      {/* Human review warning */}
-      <div style={{
-        background: '#1c1a0a',
-        border: '1px solid #854d0e',
-        borderRadius: '6px',
-        padding: '0.6rem 1rem',
-        marginBottom: '1rem',
-        fontSize: '0.78rem',
-        color: '#fde68a',
-      }}>
-        <strong>⚠ HUMAN REVIEW REQUIRED: </strong>{card.human_review_warning}
-      </div>
+      <div className="m7-human-review"><ShieldCheck size={18} /><div><strong>Human review required</strong><span>{card.human_review_warning || 'This recommendation requires operator verification before action.'}</span></div></div>
 
       {isFeasible ? (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-          {/* Left column */}
-          <div>
-            <div className="kv-row" style={{ marginBottom: '0.5rem' }}>
-              <span className="kv-label" style={{ color: '#9ca3af', fontSize: '0.78rem' }}>ZONE</span>
-              <span className="kv-val">{card.zone_id}</span>
-            </div>
-            <div className="kv-row" style={{ marginBottom: '0.5rem' }}>
-              <span className="kv-label" style={{ color: '#9ca3af', fontSize: '0.78rem' }}>PRIORITY</span>
-              <span className="kv-val">{card.priority}</span>
-            </div>
-            <div className="kv-row" style={{ marginBottom: '0.5rem' }}>
-              <span className="kv-label" style={{ color: '#9ca3af', fontSize: '0.78rem' }}>INTERVENTION</span>
-              <span className="zone-id-tag">{card.intervention_id}</span>
-            </div>
-            <div className="kv-row" style={{ marginBottom: '0.5rem' }}>
-              <span className="kv-label" style={{ color: '#9ca3af', fontSize: '0.78rem' }}>TARGET NODE</span>
-              <code className="score-code">{card.target_node}</code>
-            </div>
-            <div className="kv-row" style={{ marginBottom: '0.5rem' }}>
-              <span className="kv-label" style={{ color: '#9ca3af', fontSize: '0.78rem' }}>ACTION</span>
-              <span style={{ color: '#e5e7eb', fontSize: '0.88rem' }}>{card.action}</span>
-            </div>
-            <div className="kv-row" style={{ marginBottom: '0.5rem' }}>
-              <span className="kv-label" style={{ color: '#9ca3af', fontSize: '0.78rem' }}>RESOURCES</span>
-              <div className="resource-demand-tags">{resourceTags(card.required_resources)}</div>
-            </div>
-            <div className="kv-row" style={{ marginBottom: '0.5rem' }}>
-              <span className="kv-label" style={{ color: '#9ca3af', fontSize: '0.78rem' }}>MODELLED RISK CHANGE</span>
-              <code className="score-code" style={{ color: '#6ee7b7' }}>
-                {card.modelled_relative_change !== null
-                  ? `${(card.modelled_relative_change * 100).toFixed(2)}%`
-                  : '—'}
-              </code>
-            </div>
+        <div className="m7-decision-grid">
+          <div className="m7-decision-primary">
+            <span className="m7-panel-label">Recommended intervention</span>
+            <h4>{card.action || card.intervention_id || 'Intervention selected'}</h4>
+            {card.intervention_id && <code>{card.intervention_id}</code>}
+            <dl>
+              <div><dt>Zone</dt><dd>{card.zone_id}</dd></div>
+              <div><dt>Target node</dt><dd>{card.target_node || 'Not specified'}</dd></div>
+              <div><dt>Priority</dt><dd>{card.priority}</dd></div>
+              <div><dt>Modelled relative change</dt><dd>{card.modelled_relative_change != null ? pct(card.modelled_relative_change) : 'Not returned'}</dd></div>
+            </dl>
+            <div className="m7-decision-resources"><span>Required resources</span><ResourceTags resources={card.required_resources} /></div>
           </div>
-
-          {/* Right column */}
-          <div>
+          <div className="m7-decision-support">
             {card.expected_impact && (
-              <div style={{ marginBottom: '0.75rem' }}>
-                <strong style={{ color: '#9ca3af', fontSize: '0.78rem' }}>EXPECTED IMPACT (MODEL INDICES)</strong>
-                <div style={{ marginTop: '0.4rem', fontSize: '0.82rem', color: '#d1d5db' }}>
-                  <div>Impact Index: {fmt(card.expected_impact.before.impact_index)} → <strong style={{ color: '#22c55e' }}>{fmt(card.expected_impact.after.impact_index)}</strong></div>
-                  <div>Cascade Length: {card.expected_impact.before.cascade_length} → <strong style={{ color: '#22c55e' }}>{card.expected_impact.after.cascade_length}</strong></div>
-                  <div>Pop Risk: {fmt(card.expected_impact.before.population_risk)} → <strong style={{ color: '#22c55e' }}>{fmt(card.expected_impact.after.population_risk)}</strong></div>
-                </div>
+              <div className="m7-support-block">
+                <span className="m7-panel-label">Expected impact</span>
+                <div><span>Impact index</span><strong><code>{fmt(card.expected_impact.before.impact_index)}</code> → <code>{fmt(card.expected_impact.after.impact_index)}</code></strong></div>
+                <div><span>Cascade length</span><strong><code>{card.expected_impact.before.cascade_length}</code> → <code>{card.expected_impact.after.cascade_length}</code></strong></div>
+                <div><span>Population risk</span><strong><code>{fmt(card.expected_impact.before.population_risk)}</code> → <code>{fmt(card.expected_impact.after.population_risk)}</code></strong></div>
               </div>
             )}
-
-            <div style={{ marginBottom: '0.75rem' }}>
-              <strong style={{ color: '#9ca3af', fontSize: '0.78rem' }}>AI STATUS</strong>
-              <div style={{ marginTop: '0.3rem' }}>
-                <span style={{
-                  background: '#1e3a5f',
-                  color: '#93c5fd',
-                  padding: '0.2rem 0.6rem',
-                  borderRadius: '999px',
-                  fontSize: '0.78rem',
-                }}>
-                  🤖 {card.ai_status}
-                  {card.nugen_recommendation && ` — Nugen: ${card.nugen_recommendation}`}
-                  {card.nugen_agreement === false && ' (AI differs from model)'}
-                  {card.nugen_agreement === true && ' (AI agrees)'}
-                </span>
-              </div>
+            <div className="m7-support-block">
+              <span className="m7-panel-label">Verification</span>
+              {card.quality_flags.length ? <div className="m7-quality-flags">{card.quality_flags.map((flag) => <span key={flag}>{flag}</span>)}</div> : <span className="m7-muted-value">No quality flags returned</span>}
+              <div className="m7-run-info"><span>Run ID</span><code>{card.run_id}</code></div>
             </div>
-
-            <div style={{ marginBottom: '0.75rem' }}>
-              <strong style={{ color: '#9ca3af', fontSize: '0.78rem' }}>QUALITY FLAGS</strong>
-              <div style={{ marginTop: '0.3rem', display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
-                {card.quality_flags.map(flag => (
-                  <span key={flag} style={{
-                    background: '#374151',
-                    color: '#d1d5db',
-                    padding: '0.1rem 0.4rem',
-                    borderRadius: '4px',
-                    fontSize: '0.72rem',
-                  }}>
-                    {flag}
-                  </span>
-                ))}
-              </div>
+            <div className="m7-nugen-block">
+              <span className="m7-panel-label">Nugen advisory</span>
+              <strong>{card.ai_status === 'MOCK' ? 'Mock advisory only' : card.ai_status}</strong>
+              <p>{card.nugen_recommendation ? `Nugen recommendation: ${card.nugen_recommendation}` : 'No Nugen recommendation returned.'}</p>
+              {card.nugen_agreement !== null && <span>{card.nugen_agreement ? 'Matches deterministic model selection' : 'Differs from deterministic model selection'}</span>}
             </div>
-
-            <div>
-              <strong style={{ color: '#9ca3af', fontSize: '0.78rem' }}>REASON</strong>
-              <p style={{ marginTop: '0.3rem', color: '#d1d5db', fontSize: '0.82rem', lineHeight: 1.5 }}>
-                {card.reason}
-              </p>
-            </div>
+            <div className="m7-decision-reason"><span className="m7-panel-label">Decision rationale</span><p>{card.reason}</p></div>
           </div>
         </div>
       ) : (
-        /* No feasible intervention */
-        <div>
-          <div style={{ color: '#f87171', fontSize: '0.95rem', marginBottom: '1rem' }}>
-            <strong>⚠ No feasible intervention passed final verification.</strong>
-          </div>
-          <p style={{ color: '#d1d5db', fontSize: '0.85rem', marginBottom: '0.75rem' }}>
-            {card.reason}
-          </p>
-          {card.blockers.length > 0 && (
-            <div>
-              <strong style={{ color: '#9ca3af', fontSize: '0.78rem' }}>BLOCKERS</strong>
-              <ul style={{ marginTop: '0.3rem', paddingLeft: '1.2rem', color: '#fca5a5', fontSize: '0.85rem' }}>
-                {card.blockers.map((b, i) => <li key={i}>{b}</li>)}
-              </ul>
-            </div>
-          )}
-          {card.rejected_candidates.length > 0 && (
-            <div style={{ marginTop: '0.75rem' }}>
-              <strong style={{ color: '#9ca3af', fontSize: '0.78rem' }}>REJECTED CANDIDATES</strong>
-              {card.rejected_candidates.map(rc => (
-                <div key={rc.intervention_id} style={{ marginTop: '0.4rem', fontSize: '0.82rem' }}>
-                  <span className="zone-id-tag" style={{ background: '#450a0a', color: '#fca5a5' }}>
-                    {rc.intervention_id}
-                  </span>
-                  <ul style={{ margin: '0.2rem 0 0', paddingLeft: '1.2rem', color: '#f87171' }}>
-                    {rc.blockers.map((b, i) => <li key={i}>{b}</li>)}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          )}
+        <div className="m7-fallback-content">
+          <strong>No feasible intervention passed final verification.</strong>
+          <p>{card.reason}</p>
+          {!!card.blockers.length && <div><span className="m7-panel-label">Blockers</span><ul>{card.blockers.map((blocker, index) => <li key={`${blocker}-${index}`}>{blocker}</li>)}</ul></div>}
+          {!!card.rejected_candidates.length && <div><span className="m7-panel-label">Rejected candidates</span>{card.rejected_candidates.map((candidate) => <article key={candidate.intervention_id}><strong>{candidate.intervention_id}</strong><ul>{candidate.blockers.map((blocker, index) => <li key={`${blocker}-${index}`}>{blocker}</li>)}</ul></article>)}</div>}
+          <div className="m7-nugen-block"><span className="m7-panel-label">Nugen advisory</span><strong>{card.ai_status === 'MOCK' ? 'Mock advisory only' : card.ai_status}</strong><p>{card.nugen_recommendation || 'No Nugen recommendation returned.'}</p></div>
         </div>
       )}
-
-      <div style={{ marginTop: '0.75rem', fontSize: '0.72rem', color: '#6b7280' }}>
-        Run ID: <code>{card.run_id}</code>
-      </div>
-    </div>
+    </section>
   );
 };
-
-// ── Main Tab Component ────────────────────────────────────────────────────────
 
 export const InterventionsTab: React.FC<InterventionsTabProps> = ({
   scenarioDetail,
@@ -564,111 +345,64 @@ export const InterventionsTab: React.FC<InterventionsTabProps> = ({
   const whatIf = analysisResult?.what_if_analysis ?? null;
   const altComp = analysisResult?.alternative_comparison ?? null;
   const decCard = analysisResult?.decision_card ?? null;
+  const hasM7Data = !!(resourceAlloc || ranking || whatIf || altComp || decCard);
+  const isMonitoringOnly = !!analysisResult?.is_monitoring_only || analysisResult?.pipeline_status === 'MONITORING_ONLY';
+  const isDataInsufficient = analysisResult?.pipeline_status === 'DATA_INSUFFICIENT';
 
-  const hasM4Data = resourceAlloc || ranking || decCard;
+  const rankingNugenId = ranking?.nugen_recommendation && typeof ranking.nugen_recommendation.recommended_action === 'string'
+    ? ranking.nugen_recommendation.recommended_action
+    : null;
 
   return (
-    <div className="tab-pane interventions-pane">
-      {/* Scope Status Banner */}
-      <div className="milestone-placeholder-banner banner-live">
-        <div className="placeholder-banner-head">
-          <span className="badge-live">MILESTONE 4: ACTIVE</span>
-          <span className="badge-spec">ALGORITHMS 8 &amp; 10–13 DECISION CORE</span>
-          <h2 className="banner-title">Intervention Optimization &amp; Decision Support Engine</h2>
+    <div className="tab-pane redesigned-section m7-section">
+      <div className="section-page-header">
+        <div>
+          <span className="section-eyebrow">Decision support</span>
+          <h2 className="section-title">Interventions</h2>
+          <p className="section-description">Resource feasibility, intervention comparison, and model-derived next steps.</p>
         </div>
-        <p className="banner-text">
-          Depot resource allocation, multi-criteria Pareto ranking, what-if counterfactual simulation,
-          side-by-side alternative comparison, and Command Decision Card generation.
-        </p>
+        <div className={`analysis-status-chip ${isAnalyzing ? 'status-running' : analysisError || isDataInsufficient ? 'status-alert' : isMonitoringOnly ? 'status-monitoring' : analysisResult ? 'status-ready' : 'status-awaiting'}`}>
+          <span className="status-dot" />
+          {isAnalyzing ? 'Analysis running' : analysisError ? 'Analysis error' : isDataInsufficient ? 'Data insufficient' : isMonitoringOnly ? 'Monitoring only' : analysisResult ? 'Analysis complete' : 'Awaiting analysis'}
+        </div>
       </div>
 
-      {/* Analysis Error Alert */}
-      {analysisError && (
-        <div className="dashboard-card" style={{ background: '#2d1215', border: '1px solid #7f1d1d', marginBottom: '1.5rem', padding: '1rem' }}>
-          <strong style={{ color: '#f87171' }}>Analysis Execution Failed: </strong>
-          <span style={{ color: '#fca5a5' }}>{analysisError}</span>
+      <div className="scenario-context-strip">
+        <div><span className="context-label">Active scenario</span><strong>{scenarioDetail?.name || 'No scenario selected'}</strong></div>
+        <div><span className="context-label">Data quality</span><strong>{analysisResult?.data_label || scenarioDetail?.data_label || 'Unavailable'}</strong></div>
+        <div><span className="context-label">Pipeline status</span><strong>{analysisResult?.pipeline_status || 'NOT_RUN'}</strong></div>
+      </div>
+
+      {isAnalyzing && <div className="redesign-state-card loading-state"><Activity size={22} /><div><strong>Running intervention analysis</strong><span>Resource allocation and deterministic decision results are being calculated.</span></div></div>}
+      {analysisError && <div className="redesign-state-card error-state"><AlertTriangle size={22} /><div><strong>Analysis could not be completed</strong><span>{analysisError}</span></div></div>}
+
+      {!analysisResult && !isAnalyzing && (
+        <div className="redesign-state-card m7-awaiting">
+          <Package size={22} />
+          <div><strong>Intervention optimization awaiting execution</strong><span>Run flood analysis to evaluate resources, ranked actions, simulations, and the decision card.</span></div>
+          {onRunAnalysis && <button type="button" className="btn btn-primary" onClick={onRunAnalysis} disabled={isAnalyzing}>Run flood analysis</button>}
         </div>
       )}
 
-      {/* Awaiting Analysis Prompt */}
-      {!analysisResult && (
-        <div className="dashboard-card action-prompt-card" style={{ marginBottom: '1.5rem' }}>
-          <div className="action-prompt-content" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-            <div>
-              <h3 className="card-heading-sm">Intervention Optimization Awaiting Execution</h3>
-              <p className="card-subheading">
-                Execute flood risk analysis on <strong>{scenarioDetail?.name || 'the active scenario'}</strong> to evaluate depot resource feasibility, rank countermeasures, and generate operational decision cards.
-              </p>
-            </div>
-            {onRunAnalysis && (
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={onRunAnalysis}
-                disabled={isAnalyzing}
-              >
-                {isAnalyzing ? 'Optimizing Interventions...' : 'Run Flood Analysis'}
-              </button>
-            )}
-          </div>
-        </div>
+      {isDataInsufficient && (
+        <div className="redesign-state-card error-state"><AlertTriangle size={22} /><div><strong>DATA_INSUFFICIENT</strong><span>Required telemetry is missing. Intervention allocations and recommendations are not fabricated.</span></div></div>
       )}
 
-      {/* Monitoring Only Guard */}
-      {analysisResult && (analysisResult.is_monitoring_only || analysisResult.cascade_status !== 'SUCCESS') && (
-        <div className="dashboard-card monitoring-alert-card" style={{ marginBottom: '1.5rem', background: '#0f2027', border: '1px solid #1e3a5f' }}>
-          <div className="monitoring-alert-head" style={{ marginBottom: '0.5rem' }}>
-            <span className="badge-nominal">STATUS: MONITORING_ONLY</span>
-            <h3 className="card-heading-sm" style={{ marginTop: '0.5rem' }}>No Flood Hotspots Qualified for Tactical Interventions</h3>
-          </div>
-          <p className="card-subheading">
-            Downstream intervention algorithms (8, 10–13) require at least one zone exceeding the flood hotspot threshold (&ge;50.0). Catchment is currently within nominal thresholds.
-          </p>
-        </div>
+      {analysisResult && isMonitoringOnly && (
+        <div className="redesign-state-card monitoring-state"><Info size={22} /><div><strong>Monitoring-only state</strong><span>No qualifying hotspots were found, so tactical intervention algorithms are bypassed.</span></div></div>
       )}
 
-      {/* Analysis Ran But No M4 Data Payload */}
-      {analysisResult && !analysisResult.is_monitoring_only && analysisResult.cascade_status === 'SUCCESS' && !hasM4Data && (
-        <div className="dashboard-card" style={{ marginBottom: '1.5rem', padding: '1rem' }}>
-          <p className="banner-text">
-            Analysis completed but Milestone 4 decision support data is missing from backend response.
-          </p>
-        </div>
+      {analysisResult && !isMonitoringOnly && !isDataInsufficient && !hasM7Data && (
+        <div className="redesign-state-card empty-state"><Package size={22} /><div><strong>Decision support data unavailable</strong><span>The analysis completed without resource, ranking, simulation, comparison, or decision-card data.</span></div></div>
       )}
 
-      {/* Full M4 Dashboard Results */}
-      {analysisResult && hasM4Data && (
+      {analysisResult && !isMonitoringOnly && !isDataInsufficient && hasM7Data && (
         <>
-          <DataDisclaimer />
-
-          {/* Resource Allocation */}
+          <div className="m7-data-notice"><Info size={15} /><span>Synthetic or illustrative prototype data may be present. Deterministic results require human review and are not autonomous commands.</span></div>
           {resourceAlloc && <ResourceAllocationPanel data={resourceAlloc} />}
-
-          {/* Intervention Ranking */}
-          {ranking && (
-            <InterventionRankingPanel
-              feasible={ranking.feasible}
-              infeasible={ranking.infeasible}
-              nugenRecommended={
-                ranking.nugen_recommendation
-                  ? (ranking.nugen_recommendation as Record<string, string>)['recommended_action'] ?? null
-                  : null
-              }
-            />
-          )}
-
-          {/* What-If Simulation */}
+          {ranking && <InterventionRankingPanel feasible={ranking.feasible} infeasible={ranking.infeasible} nugenRecommended={rankingNugenId} />}
           {whatIf && <WhatIfPanel data={whatIf} />}
-
-          {/* Alternative Comparison */}
-          {altComp && (
-            <AlternativeComparisonPanel
-              noAction={altComp.no_action_baseline}
-              rows={altComp.rows}
-            />
-          )}
-
-          {/* Command Decision Card */}
+          {altComp && <AlternativeComparisonPanel noAction={altComp.no_action_baseline} rows={altComp.rows} />}
           {decCard && <DecisionCardPanel card={decCard} />}
         </>
       )}

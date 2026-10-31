@@ -423,6 +423,7 @@ export interface ScenarioZoneItem {
   soil_saturation_index: number;
   drainage_capacity_cms: number;
   critical_infrastructure_count: number;
+  population?: number;
   risk_score: number;
   severity: RiskSeverity;
   is_hotspot: boolean;

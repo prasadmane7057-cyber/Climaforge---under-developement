@@ -3,8 +3,10 @@ import {
   RefreshCw,
   Server,
   AlertTriangle,
+  ChevronDown,
 } from 'lucide-react';
 import type { HealthCheckResult } from '../services/api';
+import type { ScenarioSummaryItem } from '../types/api';
 import type { NavigationTab } from './Sidebar';
 
 interface HeaderProps {
@@ -13,30 +15,40 @@ interface HeaderProps {
   isCheckingHealth: boolean;
   onRefreshHealth: () => void;
   scenarioName?: string;
+  scenarios?: ScenarioSummaryItem[];
+  selectedScenarioId?: string;
+  onSelectScenario?: (id: string) => void;
+  isLoadingScenario?: boolean;
 }
 
-const TAB_TITLES: Record<NavigationTab, { title: string; subtitle: string }> = {
+const TAB_TITLES: Record<NavigationTab, { label: string; title: string; subtitle: string }> = {
   overview: {
+    label: 'Overview',
     title: 'Operations Overview & Scenario Monitor',
     subtitle: 'Zonal risk aggregation, critical asset distribution, and telemetry overview',
   },
   'risk-map': {
+    label: 'Risk Map',
     title: 'Tactical Risk Map & Zonal Inundation Schematic',
     subtitle: 'Spatial distribution of hydraulic risk, watercourse proximity, and asset locations',
   },
   'consequence-graph': {
+    label: 'Consequence Graph',
     title: 'Consequence Graph & Critical Cascade Infrastructure',
     subtitle: 'Directed failure propagation dependencies across critical facilities (Milestone 3 Preview)',
   },
   interventions: {
+    label: 'Interventions',
     title: 'Candidate Interventions & Logistics Catalog',
-    subtitle: 'Mitigation actions, barrier deployments, and resource demands (Milestone 4 Preview)',
+    subtitle: 'Mitigation actions, barrier deployments, and resource demands (Milestone 4)',
   },
   'emergency-chatbot': {
+    label: 'Emergency Chatbot',
     title: 'Autonomous Citizen Emergency Guidance',
     subtitle: 'Pre-calamity warning, verified live navigation, and offline SOS outbox (Milestone 5 Preview)',
   },
   'audit-log': {
+    label: 'Audit Log',
     title: 'System Operational & UI Session Audit Log',
     subtitle: 'Authentic chronological record of backend lifecycle events and operator actions',
   },
@@ -48,38 +60,76 @@ export const Header: React.FC<HeaderProps> = ({
   isCheckingHealth,
   onRefreshHealth,
   scenarioName,
+  scenarios,
+  selectedScenarioId,
+  onSelectScenario,
+  isLoadingScenario,
 }) => {
   const currentTabInfo = TAB_TITLES[activeTab];
+  const activeScenario = scenarios?.find((s) => s.scenario_id === selectedScenarioId);
+  const isHighSeverity =
+    activeScenario?.severity === 'CRITICAL' ||
+    activeScenario?.severity === 'ELEVATED' ||
+    (scenarioName ? scenarioName.toLowerCase().includes('alert') : false);
 
   return (
     <header className="dashboard-header">
       {/* Top Banner */}
       <div className="prototype-banner">
         <div className="banner-content">
-          <AlertTriangle size={14} className="banner-icon" />
+          <AlertTriangle size={13} className="banner-icon" />
           <span className="banner-tag">SYNTHETIC / ILLUSTRATIVE DATA ONLY</span>
           <span className="banner-desc">
-            For CLIMAFORGE prototype demonstration only. Not for real-world evacuation or emergency dispatch.
+            CLIMAFORGE demonstration prototype. Not for real-world emergency dispatch or evacuation operations.
           </span>
         </div>
       </div>
 
       {/* Main Header Bar */}
       <div className="header-bar">
-        <div className="header-title-block">
-          <div className="breadcrumb">
-            <span>CLIMAFORGE</span>
-            <span className="breadcrumb-separator">/</span>
-            <span className="breadcrumb-current">{activeTab.replace('-', ' ').toUpperCase()}</span>
-            {scenarioName && (
-              <>
-                <span className="breadcrumb-separator">/</span>
-                <span className="breadcrumb-scenario">{scenarioName}</span>
-              </>
-            )}
-          </div>
-          <h1 className="header-title">{currentTabInfo.title}</h1>
-          <p className="header-subtitle">{currentTabInfo.subtitle}</p>
+        <div className="header-left">
+          <h1 className="header-tab-title">{currentTabInfo.label}</h1>
+          <span className="header-separator">/</span>
+
+          {/* Scenario Selector Pill */}
+          {scenarios && onSelectScenario ? (
+            <div className="scenario-selector-pill" title="Active simulation scenario">
+              <span
+                className={`scenario-pill-dot ${
+                  isHighSeverity ? 'dot-critical' : 'dot-stable'
+                }`}
+              />
+              <select
+                className="scenario-pill-select"
+                value={selectedScenarioId}
+                onChange={(e) => onSelectScenario(e.target.value)}
+                disabled={isLoadingScenario}
+                aria-label="Select simulation scenario"
+              >
+                {scenarios.map((sc) => (
+                  <option key={sc.scenario_id} value={sc.scenario_id}>
+                    {sc.name} ({sc.severity})
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={13} className="scenario-pill-chevron" />
+            </div>
+          ) : scenarioName ? (
+            <div className="scenario-selector-pill">
+              <span
+                className={`scenario-pill-dot ${
+                  isHighSeverity ? 'dot-critical' : 'dot-stable'
+                }`}
+              />
+              <span className="scenario-pill-text">{scenarioName}</span>
+            </div>
+          ) : null}
+
+          {/* Status Tag */}
+          <span className="synthetic-data-pill">
+            <span className="synthetic-dot" />
+            Synthetic simulation data
+          </span>
         </div>
 
         <div className="header-actions">
@@ -93,7 +143,7 @@ export const Header: React.FC<HeaderProps> = ({
                 : 'pill-offline'
             }`}
           >
-            <Server size={14} />
+            <Server size={13} />
             <span className="connection-text">
               {isCheckingHealth
                 ? 'Checking...'
@@ -109,12 +159,13 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Quick Check Health Button */}
           <button
             type="button"
-            className="btn btn-icon-secondary"
+            className="btn-icon-secondary"
             onClick={onRefreshHealth}
             disabled={isCheckingHealth}
             title="Ping backend health endpoint"
+            aria-label="Refresh backend health"
           >
-            <RefreshCw size={15} className={isCheckingHealth ? 'spin-animation' : ''} />
+            <RefreshCw size={14} className={isCheckingHealth ? 'spin-animation' : ''} />
           </button>
         </div>
       </div>
