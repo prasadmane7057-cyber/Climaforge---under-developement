@@ -1,5 +1,8 @@
 """CLIMAFORGE FastAPI Backend Application Entrypoint."""
 
+from contextlib import asynccontextmanager
+from typing import AsyncIterator
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -7,6 +10,13 @@ from app.config import settings
 from app.routers.health import router as health_router
 from app.routers.scenarios import router as scenarios_router
 from app.routers.audit import router as audit_router
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    settings.validate_auth_configuration()
+    yield
+
 
 app = FastAPI(
     title=settings.app_name,
@@ -17,6 +27,7 @@ app = FastAPI(
     ),
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 # Configure CORS Middleware for Frontend Development Server
