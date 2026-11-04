@@ -322,6 +322,20 @@ Copy-Item backend\.env.example backend\.env
 Copy-Item frontend\.env.example frontend\.env
 ```
 
+Strict authentication requires a JWT signing key and a separate refresh-token
+pepper. Generate two independent values, then replace the corresponding
+placeholders in both `.env` and `backend\.env`:
+
+```powershell
+python -c "import secrets; print(secrets.token_hex(32))"
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+Keep these values private. The examples use a local SQLite database URL; the
+backend also accepts PostgreSQL URLs using the `postgresql+psycopg` driver.
+The backend exits at startup if strict authentication configuration is missing
+or invalid.
+
 ### 2. Backend Setup
 
 Create the Python virtual environment and install dependencies:
