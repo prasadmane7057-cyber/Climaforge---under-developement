@@ -1,0 +1,5 @@
+{
+  "model_name": "hist_gradient_weighted",
+  "threshold": 0.687254,
+  "threshold_source": "validation_only"
+}

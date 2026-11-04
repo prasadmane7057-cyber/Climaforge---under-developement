@@ -1,0 +1,6183 @@
+{
+  "experiment": "M14 predictive feature enhancement",
+  "production_model_changed": false,
+  "target": {
+    "NORMAL": "next-day precipitation below 50 mm",
+    "HEAVY_RAIN": "next-day precipitation at least 50 mm"
+  },
+  "data_sources": {
+    "base": "NOAA NCEI GHCN-Daily station CSV files",
+    "meteorological_elements": [
+      "TMAX/TMIN/TAVG",
+      "AWND",
+      "WSF2/WSF5",
+      "WDF2/WDF5",
+      "RHAV/RHMN/RHMX",
+      "ASLP/ASTP"
+    ],
+    "unit_limits": [
+      "TMAX/TMIN/TAVG tenths of degrees Celsius divided by 10",
+      "AWND and WSF tenths of metres per second divided by 10",
+      "RH values divided by 10 when sourced as tenths of percent",
+      "ASLP/ASTP tenths of hectopascals divided by 10",
+      "Missing values remain missing; no target-driven interpolation used"
+    ]
+  },
+  "feature_dataset": "backend\\data\\m14_predictive_features.csv",
+  "valid_model_rows": 166212,
+  "source_missing_statistics_by_station": {
+    "USW00094728": {
+      "tmax_c": {
+        "available_values": 57637,
+        "missing_values": 7,
+        "coverage_pct": 99.9879
+      },
+      "tmin_c": {
+        "available_values": 57637,
+        "missing_values": 7,
+        "coverage_pct": 99.9879
+      },
+      "tavg_c": {
+        "available_values": 2648,
+        "missing_values": 54996,
+        "coverage_pct": 4.5937
+      },
+      "awnd_ms": {
+        "available_values": 11268,
+        "missing_values": 46376,
+        "coverage_pct": 19.5476
+      },
+      "wsf2_ms": {
+        "available_values": 11022,
+        "missing_values": 46622,
+        "coverage_pct": 19.1208
+      },
+      "wsf5_ms": {
+        "available_values": 11006,
+        "missing_values": 46638,
+        "coverage_pct": 19.0931
+      },
+      "wdf2_deg": {
+        "available_values": 11022,
+        "missing_values": 46622,
+        "coverage_pct": 19.1208
+      },
+      "wdf5_deg": {
+        "available_values": 10968,
+        "missing_values": 46676,
+        "coverage_pct": 19.0271
+      },
+      "rhav_pct": {
+        "available_values": 6844,
+        "missing_values": 50800,
+        "coverage_pct": 11.8729
+      },
+      "rhmn_pct": {
+        "available_values": 6846,
+        "missing_values": 50798,
+        "coverage_pct": 11.8763
+      },
+      "rhmx_pct": {
+        "available_values": 6846,
+        "missing_values": 50798,
+        "coverage_pct": 11.8763
+      },
+      "aslp_hpa": {
+        "available_values": 6775,
+        "missing_values": 50869,
+        "coverage_pct": 11.7532
+      },
+      "astp_hpa": {
+        "available_values": 6775,
+        "missing_values": 50869,
+        "coverage_pct": 11.7532
+      }
+    },
+    "USW00012839": {
+      "tmax_c": {
+        "available_values": 28790,
+        "missing_values": 1,
+        "coverage_pct": 99.9965
+      },
+      "tmin_c": {
+        "available_values": 28790,
+        "missing_values": 1,
+        "coverage_pct": 99.9965
+      },
+      "tavg_c": {
+        "available_values": 2679,
+        "missing_values": 26112,
+        "coverage_pct": 9.305
+      },
+      "awnd_ms": {
+        "available_values": 15633,
+        "missing_values": 13158,
+        "coverage_pct": 54.2982
+      },
+      "wsf2_ms": {
+        "available_values": 11070,
+        "missing_values": 17721,
+        "coverage_pct": 38.4495
+      },
+      "wsf5_ms": {
+        "available_values": 11055,
+        "missing_values": 17736,
+        "coverage_pct": 38.3974
+      },
+      "wdf2_deg": {
+        "available_values": 11070,
+        "missing_values": 17721,
+        "coverage_pct": 38.4495
+      },
+      "wdf5_deg": {
+        "available_values": 11055,
+        "missing_values": 17736,
+        "coverage_pct": 38.3974
+      },
+      "rhav_pct": {
+        "available_values": 6878,
+        "missing_values": 21913,
+        "coverage_pct": 23.8894
+      },
+      "rhmn_pct": {
+        "available_values": 6878,
+        "missing_values": 21913,
+        "coverage_pct": 23.8894
+      },
+      "rhmx_pct": {
+        "available_values": 6878,
+        "missing_values": 21913,
+        "coverage_pct": 23.8894
+      },
+      "aslp_hpa": {
+        "available_values": 6864,
+        "missing_values": 21927,
+        "coverage_pct": 23.8408
+      },
+      "astp_hpa": {
+        "available_values": 6864,
+        "missing_values": 21927,
+        "coverage_pct": 23.8408
+      }
+    },
+    "USW00024233": {
+      "tmax_c": {
+        "available_values": 28791,
+        "missing_values": 0,
+        "coverage_pct": 100.0
+      },
+      "tmin_c": {
+        "available_values": 28790,
+        "missing_values": 1,
+        "coverage_pct": 99.9965
+      },
+      "tavg_c": {
+        "available_values": 2673,
+        "missing_values": 26118,
+        "coverage_pct": 9.2842
+      },
+      "awnd_ms": {
+        "available_values": 15638,
+        "missing_values": 13153,
+        "coverage_pct": 54.3156
+      },
+      "wsf2_ms": {
+        "available_values": 11074,
+        "missing_values": 17717,
+        "coverage_pct": 38.4634
+      },
+      "wsf5_ms": {
+        "available_values": 10874,
+        "missing_values": 17917,
+        "coverage_pct": 37.7687
+      },
+      "wdf2_deg": {
+        "available_values": 11074,
+        "missing_values": 17717,
+        "coverage_pct": 38.4634
+      },
+      "wdf5_deg": {
+        "available_values": 10874,
+        "missing_values": 17917,
+        "coverage_pct": 37.7687
+      },
+      "rhav_pct": {
+        "available_values": 6848,
+        "missing_values": 21943,
+        "coverage_pct": 23.7852
+      },
+      "rhmn_pct": {
+        "available_values": 6848,
+        "missing_values": 21943,
+        "coverage_pct": 23.7852
+      },
+      "rhmx_pct": {
+        "available_values": 6848,
+        "missing_values": 21943,
+        "coverage_pct": 23.7852
+      },
+      "aslp_hpa": {
+        "available_values": 6829,
+        "missing_values": 21962,
+        "coverage_pct": 23.7192
+      },
+      "astp_hpa": {
+        "available_values": 6829,
+        "missing_values": 21962,
+        "coverage_pct": 23.7192
+      }
+    },
+    "USW00023174": {
+      "tmax_c": {
+        "available_values": 30010,
+        "missing_values": 242,
+        "coverage_pct": 99.2001
+      },
+      "tmin_c": {
+        "available_values": 30033,
+        "missing_values": 219,
+        "coverage_pct": 99.2761
+      },
+      "tavg_c": {
+        "available_values": 2878,
+        "missing_values": 27374,
+        "coverage_pct": 9.5134
+      },
+      "awnd_ms": {
+        "available_values": 15639,
+        "missing_values": 14613,
+        "coverage_pct": 51.6958
+      },
+      "wsf2_ms": {
+        "available_values": 11068,
+        "missing_values": 19184,
+        "coverage_pct": 36.586
+      },
+      "wsf5_ms": {
+        "available_values": 10659,
+        "missing_values": 19593,
+        "coverage_pct": 35.234
+      },
+      "wdf2_deg": {
+        "available_values": 11068,
+        "missing_values": 19184,
+        "coverage_pct": 36.586
+      },
+      "wdf5_deg": {
+        "available_values": 10659,
+        "missing_values": 19593,
+        "coverage_pct": 35.234
+      },
+      "rhav_pct": {
+        "available_values": 6865,
+        "missing_values": 23387,
+        "coverage_pct": 22.6927
+      },
+      "rhmn_pct": {
+        "available_values": 6865,
+        "missing_values": 23387,
+        "coverage_pct": 22.6927
+      },
+      "rhmx_pct": {
+        "available_values": 6865,
+        "missing_values": 23387,
+        "coverage_pct": 22.6927
+      },
+      "aslp_hpa": {
+        "available_values": 6850,
+        "missing_values": 23402,
+        "coverage_pct": 22.6431
+      },
+      "astp_hpa": {
+        "available_values": 6850,
+        "missing_values": 23402,
+        "coverage_pct": 22.6431
+      }
+    },
+    "USW00012960": {
+      "tmax_c": {
+        "available_values": 20968,
+        "missing_values": 0,
+        "coverage_pct": 100.0
+      },
+      "tmin_c": {
+        "available_values": 20968,
+        "missing_values": 0,
+        "coverage_pct": 100.0
+      },
+      "tavg_c": {
+        "available_values": 2676,
+        "missing_values": 18292,
+        "coverage_pct": 12.7623
+      },
+      "awnd_ms": {
+        "available_values": 15631,
+        "missing_values": 5337,
+        "coverage_pct": 74.5469
+      },
+      "wsf2_ms": {
+        "available_values": 11100,
+        "missing_values": 9868,
+        "coverage_pct": 52.9378
+      },
+      "wsf5_ms": {
+        "available_values": 11044,
+        "missing_values": 9924,
+        "coverage_pct": 52.6707
+      },
+      "wdf2_deg": {
+        "available_values": 11100,
+        "missing_values": 9868,
+        "coverage_pct": 52.9378
+      },
+      "wdf5_deg": {
+        "available_values": 11042,
+        "missing_values": 9926,
+        "coverage_pct": 52.6612
+      },
+      "rhav_pct": {
+        "available_values": 6879,
+        "missing_values": 14089,
+        "coverage_pct": 32.8071
+      },
+      "rhmn_pct": {
+        "available_values": 6879,
+        "missing_values": 14089,
+        "coverage_pct": 32.8071
+      },
+      "rhmx_pct": {
+        "available_values": 6879,
+        "missing_values": 14089,
+        "coverage_pct": 32.8071
+      },
+      "aslp_hpa": {
+        "available_values": 6858,
+        "missing_values": 14110,
+        "coverage_pct": 32.707
+      },
+      "astp_hpa": {
+        "available_values": 6858,
+        "missing_values": 14110,
+        "coverage_pct": 32.707
+      }
+    }
+  },
+  "model_missing_statistics": {
+    "prcp_mm": {
+      "missing_values": 0,
+      "coverage_pct": 100.0
+    },
+    "tmax_c": {
+      "missing_values": 37,
+      "coverage_pct": 99.9777
+    },
+    "tmin_c": {
+      "missing_values": 14,
+      "coverage_pct": 99.9916
+    },
+    "awnd_ms": {
+      "missing_values": 92424,
+      "coverage_pct": 44.3939
+    },
+    "wsf2_ms": {
+      "missing_values": 110899,
+      "coverage_pct": 33.2786
+    },
+    "wsf5_ms": {
+      "missing_values": 111595,
+      "coverage_pct": 32.8598
+    },
+    "wdf2_deg": {
+      "missing_values": 110899,
+      "coverage_pct": 33.2786
+    },
+    "wdf5_deg": {
+      "missing_values": 111635,
+      "coverage_pct": 32.8358
+    },
+    "rhav_pct": {
+      "missing_values": 131904,
+      "coverage_pct": 20.6411
+    },
+    "rhmn_pct": {
+      "missing_values": 131902,
+      "coverage_pct": 20.6423
+    },
+    "rhmx_pct": {
+      "missing_values": 131902,
+      "coverage_pct": 20.6423
+    },
+    "aslp_hpa": {
+      "missing_values": 132042,
+      "coverage_pct": 20.5581
+    },
+    "astp_hpa": {
+      "missing_values": 132042,
+      "coverage_pct": 20.5581
+    },
+    "day_of_year_sin": {
+      "missing_values": 0,
+      "coverage_pct": 100.0
+    },
+    "day_of_year_cos": {
+      "missing_values": 0,
+      "coverage_pct": 100.0
+    },
+    "month_sin": {
+      "missing_values": 0,
+      "coverage_pct": 100.0
+    },
+    "month_cos": {
+      "missing_values": 0,
+      "coverage_pct": 100.0
+    }
+  },
+  "methodology": {
+    "chronological": "Unique-date 60/20/20 split matching M13 methodology",
+    "station_held_out": "Each station omitted completely; remaining stations use an 80/20 chronological validation split",
+    "threshold_tuning": "Validation-only F2-first threshold selection",
+    "rolling_features": "Station-local shifted precipitation only; no station boundary or future target leakage",
+    "same_day_weather": "Temperature, wind, humidity and pressure are observations on the prediction date; next-day precipitation is never used as an input",
+    "m13_comparison": "backend/models/multi_station_heavy_rain_experiment.json"
+  },
+  "chronological": {
+    "precipitation_only": {
+      "features": [
+        "station_id",
+        "prcp_mm",
+        "prcp_lag1_mm",
+        "prcp_rolling_3d_mean_mm",
+        "prcp_rolling_7d_mean_mm",
+        "prcp_rolling_14d_mean_mm",
+        "latitude",
+        "longitude",
+        "elevation_m"
+      ],
+      "partition_distributions": {
+        "train": {
+          "rows": 53029,
+          "heavy_rain_events": 278,
+          "normal_events": 52751,
+          "by_station": {
+            "USW00012839": {
+              "rows": 5732,
+              "heavy_rain_events": 73
+            },
+            "USW00023174": {
+              "rows": 6980,
+              "heavy_rain_events": 9
+            },
+            "USW00024233": {
+              "rows": 5732,
+              "heavy_rain_events": 6
+            },
+            "USW00094728": {
+              "rows": 34585,
+              "heavy_rain_events": 190
+            }
+          }
+        },
+        "validation": {
+          "rows": 55555,
+          "heavy_rain_events": 413,
+          "normal_events": 55142,
+          "by_station": {
+            "USW00012839": {
+              "rows": 11529,
+              "heavy_rain_events": 169
+            },
+            "USW00012960": {
+              "rows": 9439,
+              "heavy_rain_events": 112
+            },
+            "USW00023174": {
+              "rows": 11529,
+              "heavy_rain_events": 17
+            },
+            "USW00024233": {
+              "rows": 11529,
+              "heavy_rain_events": 12
+            },
+            "USW00094728": {
+              "rows": 11529,
+              "heavy_rain_events": 103
+            }
+          }
+        },
+        "test": {
+          "rows": 57628,
+          "heavy_rain_events": 488,
+          "normal_events": 57140,
+          "by_station": {
+            "USW00012839": {
+              "rows": 11529,
+              "heavy_rain_events": 205
+            },
+            "USW00012960": {
+              "rows": 11528,
+              "heavy_rain_events": 154
+            },
+            "USW00023174": {
+              "rows": 11529,
+              "heavy_rain_events": 16
+            },
+            "USW00024233": {
+              "rows": 11513,
+              "heavy_rain_events": 20
+            },
+            "USW00094728": {
+              "rows": 11529,
+              "heavy_rain_events": 93
+            }
+          }
+        }
+      },
+      "model_comparison_validation": {
+        "logistic": {
+          "validation": {
+            "threshold": 0.7,
+            "precision": 0.02959349593495935,
+            "recall": 0.22033898305084745,
+            "f1": 0.05217889908256881,
+            "f2": 0.09625555320499261,
+            "pr_auc": 0.024964812494295895,
+            "false_positive_rate": 0.05411483080047876,
+            "false_negative_rate": 0.7796610169491526,
+            "confusion_matrix": {
+              "labels": [
+                "NORMAL",
+                "HEAVY_RAIN"
+              ],
+              "matrix": [
+                [
+                  52158,
+                  2984
+                ],
+                [
+                  322,
+                  91
+                ]
+              ]
+            },
+            "false_positives": 2984,
+            "false_negatives": 322,
+            "true_positives": 91,
+            "true_negatives": 52158,
+            "heavy_rain_events": 413,
+            "normal_events": 55142
+          }
+        },
+        "hist_gradient": {
+          "validation": {
+            "threshold": 0.6431,
+            "precision": 0.029228149829738932,
+            "recall": 0.24939467312348668,
+            "f1": 0.052324104648209295,
+            "f2": 0.09949768160741884,
+            "pr_auc": 0.02584676805030108,
+            "false_positive_rate": 0.06203982445322984,
+            "false_negative_rate": 0.7506053268765133,
+            "confusion_matrix": {
+              "labels": [
+                "NORMAL",
+                "HEAVY_RAIN"
+              ],
+              "matrix": [
+                [
+                  51721,
+                  3421
+                ],
+                [
+                  310,
+                  103
+                ]
+              ]
+            },
+            "false_positives": 3421,
+            "false_negatives": 310,
+            "true_positives": 103,
+            "true_negatives": 51721,
+            "heavy_rain_events": 413,
+            "normal_events": 55142
+          }
+        }
+      },
+      "selected_model": "hist_gradient",
+      "selected_threshold": 0.6431,
+      "test": {
+        "threshold": 0.6431,
+        "precision": 0.0363232023721275,
+        "recall": 0.3012295081967213,
+        "f1": 0.06482910694597574,
+        "f2": 0.12252042007001164,
+        "pr_auc": 0.034501571264195646,
+        "false_positive_rate": 0.06825341267063353,
+        "false_negative_rate": 0.6987704918032787,
+        "confusion_matrix": {
+          "labels": [
+            "NORMAL",
+            "HEAVY_RAIN"
+          ],
+          "matrix": [
+            [
+              53240,
+              3900
+            ],
+            [
+              341,
+              147
+            ]
+          ]
+        },
+        "false_positives": 3900,
+        "false_negatives": 341,
+        "true_positives": 147,
+        "true_negatives": 53240,
+        "heavy_rain_events": 488,
+        "normal_events": 57140,
+        "per_station": {
+          "USW00012839": {
+            "threshold": 0.6431,
+            "precision": 0.03746177370030581,
+            "recall": 0.47804878048780486,
+            "f1": 0.06947890818858561,
+            "f2": 0.14260768335273574,
+            "pr_auc": 0.0461857990876854,
+            "false_positive_rate": 0.22235959025079477,
+            "false_negative_rate": 0.5219512195121951,
+            "confusion_matrix": {
+              "labels": [
+                "NORMAL",
+                "HEAVY_RAIN"
+              ],
+              "matrix": [
+                [
+                  8806,
+                  2518
+                ],
+                [
+                  107,
+                  98
+                ]
+              ]
+            },
+            "false_positives": 2518,
+            "false_negatives": 107,
+            "true_positives": 98,
+            "true_negatives": 8806,
+            "heavy_rain_events": 205,
+            "normal_events": 11324
+          },
+          "USW00012960": {
+            "threshold": 0.6431,
+            "precision": 0.04433497536945813,
+            "recall": 0.23376623376623376,
+            "f1": 0.07453416149068323,
+            "f2": 0.12605042016806722,
+            "pr_auc": 0.04079602943813247,
+            "false_positive_rate": 0.06822577809038158,
+            "false_negative_rate": 0.7662337662337663,
+            "confusion_matrix": {
+              "labels": [
+                "NORMAL",
+                "HEAVY_RAIN"
+              ],
+              "matrix": [
+                [
+                  10598,
+                  776
+                ],
+                [
+                  118,
+                  36
+                ]
+              ]
+            },
+            "false_positives": 776,
+            "false_negatives": 118,
+            "true_positives": 36,
+            "true_negatives": 10598,
+            "heavy_rain_events": 154,
+            "normal_events": 11374
+          },
+          "USW00023174": {
+            "threshold": 0.6431,
+            "precision": 0.0392156862745098,
+            "recall": 0.25,
+            "f1": 0.06779661016949153,
+            "f2": 0.12048192771084337,
+            "pr_auc": 0.03146142377330488,
+            "false_positive_rate": 0.008512116737600973,
+            "false_negative_rate": 0.75,
+            "confusion_matrix": {
+              "labels": [
+                "NORMAL",
+                "HEAVY_RAIN"
+              ],
+              "matrix": [
+                [
+                  11415,
+                  98
+                ],
+                [
+                  12,
+                  4
+                ]
+              ]
+            },
+            "false_positives": 98,
+            "false_negatives": 12,
+            "true_positives": 4,
+            "true_negatives": 11415,
+            "heavy_rain_events": 16,
+            "normal_events": 11513
+          },
+          "USW00024233": {
+            "threshold": 0.6431,
+            "precision": 0.034482758620689655,
+            "recall": 0.05,
+            "f1": 0.04081632653061224,
+            "f2": 0.04587155963302753,
+            "pr_auc": 0.012484263226576187,
+            "false_positive_rate": 0.002436265552945271,
+            "false_negative_rate": 0.95,
+            "confusion_matrix": {
+              "labels": [
+                "NORMAL",
+                "HEAVY_RAIN"
+              ],
+              "matrix": [
+                [
+                  11465,
+                  28
+                ],
+                [
+                  19,
+                  1
+                ]
+              ]
+            },
+            "false_positives": 28,
+            "false_negatives": 19,
+            "true_positives": 1,
+            "true_negatives": 11465,
+            "heavy_rain_events": 20,
+            "normal_events": 11493
+          },
+          "USW00094728": {
+            "threshold": 0.6431,
+            "precision": 0.01639344262295082,
+            "recall": 0.08602150537634409,
+            "f1": 0.027538726333907058,
+            "f2": 0.04651162790697675,
+            "pr_auc": 0.013148615776746916,
+            "false_positive_rate": 0.04197271773347324,
+            "false_negative_rate": 0.9139784946236559,
+            "confusion_matrix": {
+              "labels": [
+                "NORMAL",
+                "HEAVY_RAIN"
+              ],
+              "matrix": [
+                [
+                  10956,
+                  480
+                ],
+                [
+                  85,
+                  8
+                ]
+              ]
+            },
+            "false_positives": 480,
+            "false_negatives": 85,
+            "true_positives": 8,
+            "true_negatives": 10956,
+            "heavy_rain_events": 93,
+            "normal_events": 11436
+          }
+        }
+      }
+    },
+    "precipitation_temperature": {
+      "features": [
+        "station_id",
+        "prcp_mm",
+        "prcp_lag1_mm",
+        "prcp_rolling_3d_mean_mm",
+        "prcp_rolling_7d_mean_mm",
+        "prcp_rolling_14d_mean_mm",
+        "latitude",
+        "longitude",
+        "elevation_m",
+        "tmax_c",
+        "tmin_c"
+      ],
+      "partition_distributions": {
+        "train": {
+          "rows": 53029,
+          "heavy_rain_events": 278,
+          "normal_events": 52751,
+          "by_station": {
+            "USW00012839": {
+              "rows": 5732,
+              "heavy_rain_events": 73
+            },
+            "USW00023174": {
+              "rows": 6980,
+              "heavy_rain_events": 9
+            },
+            "USW00024233": {
+              "rows": 5732,
+              "heavy_rain_events": 6
+            },
+            "USW00094728": {
+              "rows": 34585,
+              "heavy_rain_events": 190
+            }
+          }
+        },
+        "validation": {
+          "rows": 55555,
+          "heavy_rain_events": 413,
+          "normal_events": 55142,
+          "by_station": {
+            "USW00012839": {
+              "rows": 11529,
+              "heavy_rain_events": 169
+            },
+            "USW00012960": {
+              "rows": 9439,
+              "heavy_rain_events": 112
+            },
+            "USW00023174": {
+              "rows": 11529,
+              "heavy_rain_events": 17
+            },
+            "USW00024233": {
+              "rows": 11529,
+              "heavy_rain_events": 12
+            },
+            "USW00094728": {
+              "rows": 11529,
+              "heavy_rain_events": 103
+            }
+          }
+        },
+        "test": {
+          "rows": 57628,
+          "heavy_rain_events": 488,
+          "normal_events": 57140,
+          "by_station": {
+            "USW00012839": {
+              "rows": 11529,
+              "heavy_rain_events": 205
+            },
+            "USW00012960": {
+              "rows": 11528,
+              "heavy_rain_events": 154
+            },
+            "USW00023174": {
+              "rows": 11529,
+              "heavy_rain_events": 16
+            },
+            "USW00024233": {
+              "rows": 11513,
+              "heavy_rain_events": 20
+            },
+            "USW00094728": {
+              "rows": 11529,
+              "heavy_rain_events": 93
+            }
+          }
+        }
+      },
+      "model_comparison_validation": {
+        "logistic": {
+          "validation": {
+            "threshold": 0.726271,
+            "precision": 0.026564344746162927,
+            "recall": 0.3268765133171913,
+            "f1": 0.04913557779799818,
+            "f2": 0.10023760023760023,
+            "pr_auc": 0.028569223376425965,
+            "false_positive_rate": 0.08971382974864894,
+            "false_negative_rate": 0.6731234866828087,
+            "confusion_matrix": {
+              "labels": [
+                "NORMAL",
+                "HEAVY_RAIN"
+              ],
+              "matrix": [
+                [
+                  50195,
+                  4947
+                ],
+                [
+                  278,
+                  135
+                ]
+              ]
+            },
+            "false_positives": 4947,
+            "false_negatives": 278,
+            "true_positives": 135,
+            "true_negatives": 50195,
+            "heavy_rain_events": 413,
+            "normal_events": 55142
+          }
+        },
+        "hist_gradient": {
+          "validation": {
+            "threshold": 0.761224,
+            "precision": 0.04093886462882096,
+            "recall": 0.18159806295399517,
+            "f1": 0.066815144766147,
+            "f2": 0.10763490241102182,
+            "pr_auc": 0.028936255141333973,
+            "false_positive_rate": 0.03186318958325777,
+            "false_negative_rate": 0.8184019370460048,
+            "confusion_matrix": {
+              "labels": [
+                "NORMAL",
+                "HEAVY_RAIN"
+              ],
+              "matrix": [
+                [
+                  53385,
+                  1757
+                ],
+                [
+                  338,
+                  75
+                ]
+              ]
+            },
+            "false_positives": 1757,
+            "false_negatives": 338,
+            "true_positives": 75,
+            "true_negatives": 53385,
+            "heavy_rain_events": 413,
+            "normal_events": 55142
+          }
+        }
+      },
+      "selected_model": "hist_gradient",
+      "selected_threshold": 0.761224,
+      "test": {
+        "threshold": 0.761224,
+        "precision": 0.04791566842357451,
+        "recall": 0.20491803278688525,
+        "f1": 0.07766990291262135,
+        "f2": 0.12379301807378064,
+        "pr_auc": 0.03339786669151519,
+        "false_positive_rate": 0.0347742387119356,
+        "false_negative_rate": 0.7950819672131147,
+        "confusion_matrix": {
+          "labels": [
+            "NORMAL",
+            "HEAVY_RAIN"
+          ],
+          "matrix": [
+            [
+              55153,
+              1987
+            ],
+            [
+              388,
+              100
+            ]
+          ]
+        },
+        "false_positives": 1987,
+        "false_negatives": 388,
+        "true_positives": 100,
+        "true_negatives": 55153,
+        "heavy_rain_events": 488,
+        "normal_events": 57140,
+        "per_station": {
+          "USW00012839": {
+            "threshold": 0.761224,
+            "precision": 0.04668470906630582,
+            "recall": 0.33658536585365856,
+            "f1": 0.08199643493761141,
+            "f2": 0.15013054830287204,
+            "pr_auc": 0.04387814280598507,
+            "false_positive_rate": 0.12442599788060756,
+            "false_negative_rate": 0.6634146341463415,
+            "confusion_matrix": {
+              "labels": [
+                "NORMAL",
+                "HEAVY_RAIN"
+              ],
+              "matrix": [
+                [
+                  9915,
+                  1409
+                ],
+                [
+                  136,
+                  69
+                ]
+              ]
+            },
+            "false_positives": 1409,
+            "false_negatives": 136,
+            "true_positives": 69,
+            "true_negatives": 9915,
+            "heavy_rain_events": 205,
+            "normal_events": 11324
+          },
+          "USW00012960": {
+            "threshold": 0.761224,
+            "precision": 0.07123287671232877,
+            "recall": 0.16883116883116883,
+            "f1": 0.1001926782273603,
+            "f2": 0.13251783893985727,
+            "pr_auc": 0.04090102793724828,
+            "false_positive_rate": 0.029804818005978548,
+            "false_negative_rate": 0.8311688311688312,
+            "confusion_matrix": {
+              "labels": [
+                "NORMAL",
+                "HEAVY_RAIN"
+              ],
+              "matrix": [
+                [
+                  11035,
+                  339
+                ],
+                [
+                  128,
+                  26
+                ]
+              ]
+            },
+            "false_positives": 339,
+            "false_negatives": 128,
+            "true_positives": 26,
+            "true_negatives": 11035,
+            "heavy_rain_events": 154,
+            "normal_events": 11374
+          },
+          "USW00023174": {
+            "threshold": 0.761224,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "f2": 0.0,
+            "pr_auc": 0.008937065100946684,
+            "false_positive_rate": 0.0006080083384000695,
+            "false_negative_rate": 1.0,
+            "confusion_matrix": {
+              "labels": [
+                "NORMAL",
+                "HEAVY_RAIN"
+              ],
+              "matrix": [
+                [
+                  11506,
+                  7
+                ],
+                [
+                  16,
+                  0
+                ]
+              ]
+            },
+            "false_positives": 7,
+            "false_negatives": 16,
+            "true_positives": 0,
+            "true_negatives": 11506,
+            "heavy_rain_events": 16,
+            "normal_events": 11513
+          },
+          "USW00024233": {
+            "threshold": 0.761224,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "f2": 0.0,
+            "pr_auc": 0.03095832270985885,
+            "false_positive_rate": 8.700948403375968e-05,
+            "false_negative_rate": 1.0,
+            "confusion_matrix": {
+              "labels": [
+                "NORMAL",
+                "HEAVY_RAIN"
+              ],
+              "matrix": [
+                [
+                  11492,
+                  1
+                ],
+                [
+                  20,
+                  0
+                ]
+              ]
+            },
+            "false_positives": 1,
+            "false_negatives": 20,
+            "true_positives": 0,
+            "true_negatives": 11492,
+            "heavy_rain_events": 20,
+            "normal_events": 11493
+          },
+          "USW00094728": {
+            "threshold": 0.761224,
+            "precision": 0.0211864406779661,
+            "recall": 0.053763440860215055,
+            "f1": 0.030395136778115502,
+            "f2": 0.041118421052631575,
+            "pr_auc": 0.016914783019565633,
+            "false_positive_rate": 0.020199370409234,
+            "false_negative_rate": 0.946236559139785,
+            "confusion_matrix": {
+              "labels": [
+                "NORMAL",
+                "HEAVY_RAIN"
+              ],
+              "matrix": [
+                [
+                  11205,
+                  231
+                ],
+                [
+                  88,
+                  5
+                ]
+              ]
+            },
+            "false_positives": 231,
+            "false_negatives": 88,
+            "true_positives": 5,
+            "true_negatives": 11205,
+            "heavy_rain_events": 93,
+            "normal_events": 11436
+          }
+        }
+      }
+    },
+    "precipitation_atmospheric": {
+      "features": [
+        "station_id",
+        "prcp_mm",
+        "prcp_lag1_mm",
+        "prcp_rolling_3d_mean_mm",
+        "prcp_rolling_7d_mean_mm",
+        "prcp_rolling_14d_mean_mm",
+        "latitude",
+        "longitude",
+        "elevation_m",
+        "awnd_ms",
+        "wsf2_ms",
+        "wsf5_ms",
+        "wdf2_deg",
+        "wdf5_deg",
+        "rhav_pct",
+        "rhmn_pct",
+        "rhmx_pct",
+        "aslp_hpa",
+        "astp_hpa"
+      ],
+      "partition_distributions": {
+        "train": {
+          "rows": 53029,
+          "heavy_rain_events": 278,
+          "normal_events": 52751,
+          "by_station": {
+            "USW00012839": {
+              "rows": 5732,
+              "heavy_rain_events": 73
+            },
+            "USW00023174": {
+              "rows": 6980,
+              "heavy_rain_events": 9
+            },
+            "USW00024233": {
+              "rows": 5732,
+              "heavy_rain_events": 6
+            },
+            "USW00094728": {
+              "rows": 34585,
+              "heavy_rain_events": 190
+            }
+          }
+        },
+        "validation": {
+          "rows": 55555,
+          "heavy_rain_events": 413,
+          "normal_events": 55142,
+          "by_station": {
+            "USW00012839": {
+              "rows": 11529,
+              "heavy_rain_events": 169
+            },
+            "USW00012960": {
+              "rows": 9439,
+              "heavy_rain_events": 112
+            },
+            "USW00023174": {
+              "rows": 11529,
+              "heavy_rain_events": 17
+            },
+            "USW00024233": {
+              "rows": 11529,
+              "heavy_rain_events": 12
+            },
+            "USW00094728": {
+              "rows": 11529,
+              "heavy_rain_events": 103
+            }
+          }
+        },
+        "test": {
+          "rows": 57628,
+          "heavy_rain_events": 488,
+          "normal_events": 57140,
+          "by_station": {
+            "USW00012839": {
+              "rows": 11529,
+              "heavy_rain_events": 205
+            },
+            "USW00012960": {
+              "rows": 11528,
+              "heavy_rain_events": 154
+            },
+            "USW00023174": {
+              "rows": 11529,
+              "heavy_rain_events": 16
+            },
+            "USW00024233": {
+              "rows": 11513,
+              "heavy_rain_events": 20
+            },
+            "USW00094728": {
+              "rows": 11529,
+              "heavy_rain_events": 93
+            }
+          }
+        }
+      },
+      "model_comparison_validation": {
+        "logistic": {
+          "validation": {
+            "threshold": 0.7,
+            "precision": 0.02959349593495935,
+            "recall": 0.22033898305084745,
+            "f1": 0.05217889908256881,
+            "f2": 0.09625555320499261,
+            "pr_auc": 0.024964812494295895,
+            "false_positive_rate": 0.05411483080047876,
+            "false_negative_rate": 0.7796610169491526,
+            "confusion_matrix": {
+              "labels": [
+                "NORMAL",
+                "HEAVY_RAIN"
+              ],
+              "matrix": [
+                [
+                  52158,
+                  2984
+                ],
+                [
+                  322,
+                  91
+                ]
+              ]
+            },
+            "false_positives": 2984,
+            "false_negatives": 322,
+            "true_positives": 91,
+            "true_negatives": 52158,
+            "heavy_rain_events": 413,
+            "normal_events": 55142
+          }
+        },
+        "hist_gradient": {
+          "validation": {
+            "threshold": 0.6431,
+            "precision": 0.029228149829738932,
+            "recall": 0.24939467312348668,
+            "f1": 0.052324104648209295,
+            "f2": 0.09949768160741884,
+            "pr_auc": 0.02584676805030108,
+            "false_positive_rate": 0.06203982445322984,
+            "false_negative_rate": 0.7506053268765133,
+            "confusion_matrix": {
+              "labels": [
+                "NORMAL",
+                "HEAVY_RAIN"
+              ],
+              "matrix": [
+                [
+                  51721,
+                  3421
+                ],
+                [
+                  310,
+                  103
+                ]
+              ]
+            },
+            "false_positives": 3421,
+            "false_negatives": 310,
+            "true_positives": 103,
+            "true_negatives": 51721,
+            "heavy_rain_events": 413,
+            "normal_events": 55142
+          }
+        }
+      },
+      "selected_model": "hist_gradient",
+      "selected_threshold": 0.6431,
+      "test": {
+        "threshold": 0.6431,
+        "precision": 0.0363232023721275,
+        "recall": 0.3012295081967213,
+        "f1": 0.06482910694597574,
+        "f2": 0.12252042007001164,
+        "pr_auc": 0.034501571264195646,
+        "false_positive_rate": 0.06825341267063353,
+        "false_negative_rate": 0.6987704918032787,
+        "confusion_matrix": {
+          "labels": [
+            "NORMAL",
+            "HEAVY_RAIN"
+          ],
+          "matrix": [
+            [
+              53240,
+              3900
+            ],
+            [
+              341,
+              147
+            ]
+          ]
+        },
+        "false_positives": 3900,
+        "false_negatives": 341,
+        "true_positives": 147,
+        "true_negatives": 53240,
+        "heavy_rain_events": 488,
+        "normal_events": 57140,
+        "per_station": {
+          "USW00012839": {
+            "threshold": 0.6431,
+            "precision": 0.03746177370030581,
+            "recall": 0.47804878048780486,
+            "f1": 0.06947890818858561,
+            "f2": 0.14260768335273574,
+            "pr_auc": 0.0461857990876854,
+            "false_positive_rate": 0.22235959025079477,
+            "false_negative_rate": 0.5219512195121951,
+            "confusion_matrix": {
+              "labels": [
+                "NORMAL",
+                "HEAVY_RAIN"
+              ],
+              "matrix": [
+                [
+                  8806,
+                  2518
+                ],
+                [
+                  107,
+                  98
+                ]
+              ]
+            },
+            "false_positives": 2518,
+            "false_negatives": 107,
+            "true_positives": 98,
+            "true_negatives": 8806,
+            "heavy_rain_events": 205,
+            "normal_events": 11324
+          },
+          "USW00012960": {
+            "threshold": 0.6431,
+            "precision": 0.04433497536945813,
+            "recall": 0.23376623376623376,
+            "f1": 0.07453416149068323,
+            "f2": 0.12605042016806722,
+            "pr_auc": 0.04079602943813247,
+            "false_positive_rate": 0.06822577809038158,
+            "false_negative_rate": 0.7662337662337663,
+            "confusion_matrix": {
+              "labels": [
+                "NORMAL",
+                "HEAVY_RAIN"
+              ],
+              "matrix": [
+                [
+                  10598,
+                  776
+                ],
+                [
+                  118,
+                  36
+                ]
+              ]
+            },
+            "false_positives": 776,
+            "false_negatives": 118,
+            "true_positives": 36,
+            "true_negatives": 10598,
+            "heavy_rain_events": 154,
+            "normal_events": 11374
+          },
+          "USW00023174": {
+            "threshold": 0.6431,
+            "precision": 0.0392156862745098,
+            "recall": 0.25,
+            "f1": 0.06779661016949153,
+            "f2": 0.12048192771084337,
+            "pr_auc": 0.03146142377330488,
+            "false_positive_rate": 0.008512116737600973,
+            "false_negative_rate": 0.75,
+            "confusion_matrix": {
+              "labels": [
+                "NORMAL",
+                "HEAVY_RAIN"
+              ],
+              "matrix": [
+                [
+                  11415,
+                  98
+                ],
+                [
+                  12,
+                  4
+                ]
+              ]
+            },
+            "false_positives": 98,
+            "false_negatives": 12,
+            "true_positives": 4,
+            "true_negatives": 11415,
+            "heavy_rain_events": 16,
+            "normal_events": 11513
+          },
+          "USW00024233": {
+            "threshold": 0.6431,
+            "precision": 0.034482758620689655,
+            "recall": 0.05,
+            "f1": 0.04081632653061224,
+            "f2": 0.04587155963302753,
+            "pr_auc": 0.012484263226576187,
+            "false_positive_rate": 0.002436265552945271,
+            "false_negative_rate": 0.95,
+            "confusion_matrix": {
+              "labels": [
+                "NORMAL",
+                "HEAVY_RAIN"
+              ],
+              "matrix": [
+                [
+                  11465,
+                  28
+                ],
+                [
+                  19,
+                  1
+                ]
+              ]
+            },
+            "false_positives": 28,
+            "false_negatives": 19,
+            "true_positives": 1,
+            "true_negatives": 11465,
+            "heavy_rain_events": 20,
+            "normal_events": 11493
+          },
+          "USW00094728": {
+            "threshold": 0.6431,
+            "precision": 0.01639344262295082,
+            "recall": 0.08602150537634409,
+            "f1": 0.027538726333907058,
+            "f2": 0.04651162790697675,
+            "pr_auc": 0.013148615776746916,
+            "false_positive_rate": 0.04197271773347324,
+            "false_negative_rate": 0.9139784946236559,
+            "confusion_matrix": {
+              "labels": [
+                "NORMAL",
+                "HEAVY_RAIN"
+              ],
+              "matrix": [
+                [
+                  10956,
+                  480
+                ],
+                [
+                  85,
+                  8
+                ]
+              ]
+            },
+            "false_positives": 480,
+            "false_negatives": 85,
+            "true_positives": 8,
+            "true_negatives": 10956,
+            "heavy_rain_events": 93,
+            "normal_events": 11436
+          }
+        }
+      }
+    },
+    "precipitation_seasonal": {
+      "features": [
+        "station_id",
+        "prcp_mm",
+        "prcp_lag1_mm",
+        "prcp_rolling_3d_mean_mm",
+        "prcp_rolling_7d_mean_mm",
+        "prcp_rolling_14d_mean_mm",
+        "latitude",
+        "longitude",
+        "elevation_m",
+        "day_of_year_sin",
+        "day_of_year_cos",
+        "month_sin",
+        "month_cos"
+      ],
+      "partition_distributions": {
+        "train": {
+          "rows": 53029,
+          "heavy_rain_events": 278,
+          "normal_events": 52751,
+          "by_station": {
+            "USW00012839": {
+              "rows": 5732,
+              "heavy_rain_events": 73
+            },
+            "USW00023174": {
+              "rows": 6980,
+              "heavy_rain_events": 9
+            },
+            "USW00024233": {
+              "rows": 5732,
+              "heavy_rain_events": 6
+            },
+            "USW00094728": {
+              "rows": 34585,
+              "heavy_rain_events": 190
+            }
+          }
+        },
+        "validation": {
+          "rows": 55555,
+          "heavy_rain_events": 413,
+          "normal_events": 55142,
+          "by_station": {
+            "USW00012839": {
+              "rows": 11529,
+              "heavy_rain_events": 169
+            },
+            "USW00012960": {
+              "rows": 9439,
+              "heavy_rain_events": 112
+            },
+            "USW00023174": {
+              "rows": 11529,
+              "heavy_rain_events": 17
+            },
+            "USW00024233": {
+              "rows": 11529,
+              "heavy_rain_events": 12
+            },
+            "USW00094728": {
+              "rows": 11529,
+              "heavy_rain_events": 103
+            }
+          }
+        },
+        "test": {
+          "rows": 57628,
+          "heavy_rain_events": 488,
+          "normal_events": 57140,
+          "by_station": {
+            "USW00012839": {
+              "rows": 11529,
+              "heavy_rain_events": 205
+            },
+            "USW00012960": {
+              "rows": 11528,
+              "heavy_rain_events": 154
+            },
+            "USW00023174": {
+              "rows": 11529,
+              "heavy_rain_events": 16
+            },
+            "USW00024233": {
+              "rows": 11513,
+              "heavy_rain_events": 20
+            },
+            "USW00094728": {
+              "rows": 11529,
+              "heavy_rain_events": 93
+            }
+          }
+        }
+      },
+      "model_comparison_validation": {
+        "logistic": {
+          "validation": {
+            "threshold": 0.74124,
+            "precision": 0.03489771359807461,
+            "recall": 0.2106537530266344,
+            "f1": 0.05987611837577426,
+            "f2": 0.10494571773220748,
+            "pr_auc": 0.02686228084870649,
+            "false_positive_rate": 0.04363280258242356,
+            "false_negative_rate": 0.7893462469733656,
+            "confusion_matrix": {
+              "labels": [
+                "NORMAL",
+                "HEAVY_RAIN"
+              ],
+              "matrix": [
+                [
+                  52736,
+                  2406
+                ],
+                [
+                  326,
+                  87
+                ]
+              ]
+            },
+            "false_positives": 2406,
+            "false_negatives": 326,
+            "true_positives": 87,
+            "true_negatives": 52736,
+            "heavy_rain_events": 413,
+            "normal_events": 55142
+          }
+        },
+        "hist_gradient": {
+          "validation": {
+            "threshold": 0.607438,
+            "precision": 0.027094622759483118,
+            "recall": 0.31476997578692495,
+            "f1": 0.04989445403953176,
+            "f2": 0.10077519379844961,
+            "pr_auc": 0.027688297934279692,
+            "false_positive_rate": 0.08465416560879184,
+            "false_negative_rate": 0.6852300242130751,
+            "confusion_matrix": {
+              "labels": [
+                "NORMAL",
+                "HEAVY_RAIN"
+              ],
+              "matrix": [
+                [
+                  50474,
+                  4668
+                ],
+                [
+                  283,
+                  130
+                ]
+              ]
+            },
+            "false_positives": 4668,
+            "false_negatives": 283,
+            "true_positives": 130,
+            "true_negatives": 50474,
+            "heavy_rain_events": 413,
+            "normal_events": 55142
+          }
+        }
+      },
+      "selected_model": "logistic",
+      "selected_threshold": 0.74124,
+      "test": {
+        "threshold": 0.74124,
+        "precision": 0.0411240575736806,
+        "recall": 0.2459016393442623,
+        "f1": 0.07046388725778038,
+        "f2": 0.12320328542094454,
+        "pr_auc": 0.04298585736918892,
+        "false_positive_rate": 0.04896744837241862,
+        "false_negative_rate": 0.7540983606557377,
+        "confusion_matrix": {
+          "labels": [
+            "NORMAL",
+            "HEAVY_RAIN"
+          ],
+          "matrix": [
+            [
+              54342,
+              2798
+            ],
+            [
+              368,
+              120
+            ]
+          ]
+        },
+        "false_positives": 2798,
+        "false_negatives": 368,
+        "true_positives": 120,
+        "true_negatives": 54342,
+        "heavy_rain_events": 488,
+        "normal_events": 57140,
+        "per_station": {
+          "USW00012839": {
+            "threshold": 0.74124,
+            "precision": 0.04343382728666326,
+            "recall": 0.4146341463414634,
+            "f1": 0.0786308973172988,
+            "f2": 0.15304285199855958,
+            "pr_auc": 0.05292990968909853,
+            "false_positive_rate": 0.16531261038502296,
+            "false_negative_rate": 0.5853658536585366,
+            "confusion_matrix": {
+              "labels": [
+                "NORMAL",
+                "HEAVY_RAIN"
+              ],
+              "matrix": [
+                [
+                  9452,
+                  1872
+                ],
+                [
+                  120,
+                  85
+                ]
+              ]
+            },
+            "false_positives": 1872,
+            "false_negatives": 120,
+            "true_positives": 85,
+            "true_negatives": 9452,
+            "heavy_rain_events": 205,
+            "normal_events": 11324
+          },
+          "USW00012960": {
+            "threshold": 0.74124,
+            "precision": 0.05580357142857143,
+            "recall": 0.16233766233766234,
+            "f1": 0.08305647840531562,
+            "f2": 0.11748120300751881,
+            "pr_auc": 0.05935711231384163,
+            "false_positive_rate": 0.0371900826446281,
+            "false_negative_rate": 0.8376623376623377,
+            "confusion_matrix": {
+              "labels": [
+                "NORMAL",
+                "HEAVY_RAIN"
+              ],
+              "matrix": [
+                [
+                  10951,
+                  423
+                ],
+                [
+                  129,
+                  25
+                ]
+              ]
+            },
+            "false_positives": 423,
+            "false_negatives": 129,
+            "true_positives": 25,
+            "true_negatives": 10951,
+            "heavy_rain_events": 154,
+            "normal_events": 11374
+          },
+          "USW00023174": {
+            "threshold": 0.74124,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "f2": 0.0,
+            "pr_auc": 0.00773997587608596,
+            "false_positive_rate": 0.0006948666724572223,
+            "false_negative_rate": 1.0,
+            "confusion_matrix": {
+              "labels": [
+                "NORMAL",
+                "HEAVY_RAIN"
+              ],
+              "matrix": [
+                [
+                  11505,
+                  8
+                ],
+                [
+                  16,
+                  0
+                ]
+              ]
+            },
+            "false_positives": 8,
+            "false_negatives": 16,
+            "true_positives": 0,
+            "true_negatives": 11505,
+            "heavy_rain_events": 16,
+            "normal_events": 11513
+          },
+          "USW00024233": {
+            "threshold": 0.74124,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "f2": 0.0,
+            "pr_auc": 0.01997611874878064,
+            "false_positive_rate": 0.0007830853563038371,
+            "false_negative_rate": 1.0,
+            "confusion_matrix": {
+              "labels": [
+                "NORMAL",
+                "HEAVY_RAIN"
+              ],
+              "matrix": [
+                [
+                  11484,
+                  9
+                ],
+                [
+                  20,
+                  0
+                ]
+              ]
+            },
+            "false_positives": 9,
+            "false_negatives": 20,
+            "true_positives": 0,
+            "true_negatives": 11484,
+            "heavy_rain_events": 20,
+            "normal_events": 11493
+          },
+          "USW00094728": {
+            "threshold": 0.74124,
+            "precision": 0.020161290322580645,
+            "recall": 0.10752688172043011,
+            "f1": 0.03395585738539898,
+            "f2": 0.057603686635944694,
+            "pr_auc": 0.020617398247297285,
+            "false_positive_rate": 0.04249737670514166,
+            "false_negative_rate": 0.8924731182795699,
+            "confusion_matrix": {
+              "labels": [
+                "NORMAL",
+                "HEAVY_RAIN"
+              ],
+              "matrix": [
+                [
+                  10950,
+                  486
+                ],
+                [
+                  83,
+                  10
+                ]
+              ]
+            },
+            "false_positives": 486,
+            "false_negatives": 83,
+            "true_positives": 10,
+            "true_negatives": 10950,
+            "heavy_rain_events": 93,
+            "normal_events": 11436
+          }
+        }
+      }
+    }
+  },
+  "station_held_out": {
+    "precipitation_only": {
+      "USW00094728": {
+        "features": [
+          "station_id",
+          "prcp_mm",
+          "prcp_lag1_mm",
+          "prcp_rolling_3d_mean_mm",
+          "prcp_rolling_7d_mean_mm",
+          "prcp_rolling_14d_mean_mm",
+          "latitude",
+          "longitude",
+          "elevation_m"
+        ],
+        "partition_distributions": {
+          "train": {
+            "rows": 84549,
+            "heavy_rain_events": 594,
+            "normal_events": 83955,
+            "by_station": {
+              "USW00012839": {
+                "rows": 22782,
+                "heavy_rain_events": 339
+              },
+              "USW00012960": {
+                "rows": 14960,
+                "heavy_rain_events": 194
+              },
+              "USW00023174": {
+                "rows": 24030,
+                "heavy_rain_events": 33
+              },
+              "USW00024233": {
+                "rows": 22777,
+                "heavy_rain_events": 28
+              }
+            }
+          },
+          "validation": {
+            "rows": 24020,
+            "heavy_rain_events": 199,
+            "normal_events": 23821,
+            "by_station": {
+              "USW00012839": {
+                "rows": 6008,
+                "heavy_rain_events": 108
+              },
+              "USW00012960": {
+                "rows": 6007,
+                "heavy_rain_events": 72
+              },
+              "USW00023174": {
+                "rows": 6008,
+                "heavy_rain_events": 9
+              },
+              "USW00024233": {
+                "rows": 5997,
+                "heavy_rain_events": 10
+              }
+            }
+          },
+          "test": {
+            "rows": 57643,
+            "heavy_rain_events": 386,
+            "normal_events": 57257,
+            "by_station": {
+              "USW00094728": {
+                "rows": 57643,
+                "heavy_rain_events": 386
+              }
+            }
+          }
+        },
+        "model_comparison_validation": {
+          "logistic": {
+            "validation": {
+              "threshold": 0.727879,
+              "precision": 0.04401805869074492,
+              "recall": 0.39195979899497485,
+              "f1": 0.0791476407914764,
+              "f2": 0.1518691588785047,
+              "pr_auc": 0.058088666643384176,
+              "false_positive_rate": 0.07111372318542462,
+              "false_negative_rate": 0.6080402010050251,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    22127,
+                    1694
+                  ],
+                  [
+                    121,
+                    78
+                  ]
+                ]
+              },
+              "false_positives": 1694,
+              "false_negatives": 121,
+              "true_positives": 78,
+              "true_negatives": 22127,
+              "heavy_rain_events": 199,
+              "normal_events": 23821
+            }
+          },
+          "hist_gradient": {
+            "validation": {
+              "threshold": 0.7,
+              "precision": 0.035641130684145844,
+              "recall": 0.4371859296482412,
+              "f1": 0.0659090909090909,
+              "f2": 0.13438368860055608,
+              "pr_auc": 0.04845808581428055,
+              "false_positive_rate": 0.0988203685823433,
+              "false_negative_rate": 0.5628140703517588,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    21467,
+                    2354
+                  ],
+                  [
+                    112,
+                    87
+                  ]
+                ]
+              },
+              "false_positives": 2354,
+              "false_negatives": 112,
+              "true_positives": 87,
+              "true_negatives": 21467,
+              "heavy_rain_events": 199,
+              "normal_events": 23821
+            }
+          }
+        },
+        "selected_model": "logistic",
+        "selected_threshold": 0.727879,
+        "test": {
+          "threshold": 0.727879,
+          "precision": 0.014428671165929718,
+          "recall": 0.16062176165803108,
+          "f1": 0.02647875293615204,
+          "f2": 0.05307310392056155,
+          "pr_auc": 0.013144504833795114,
+          "false_positive_rate": 0.07396475540108632,
+          "false_negative_rate": 0.8393782383419689,
+          "confusion_matrix": {
+            "labels": [
+              "NORMAL",
+              "HEAVY_RAIN"
+            ],
+            "matrix": [
+              [
+                53022,
+                4235
+              ],
+              [
+                324,
+                62
+              ]
+            ]
+          },
+          "false_positives": 4235,
+          "false_negatives": 324,
+          "true_positives": 62,
+          "true_negatives": 53022,
+          "heavy_rain_events": 386,
+          "normal_events": 57257,
+          "per_station": {
+            "USW00094728": {
+              "threshold": 0.727879,
+              "precision": 0.014428671165929718,
+              "recall": 0.16062176165803108,
+              "f1": 0.02647875293615204,
+              "f2": 0.05307310392056155,
+              "pr_auc": 0.013144504833795114,
+              "false_positive_rate": 0.07396475540108632,
+              "false_negative_rate": 0.8393782383419689,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    53022,
+                    4235
+                  ],
+                  [
+                    324,
+                    62
+                  ]
+                ]
+              },
+              "false_positives": 4235,
+              "false_negatives": 324,
+              "true_positives": 62,
+              "true_negatives": 53022,
+              "heavy_rain_events": 386,
+              "normal_events": 57257
+            }
+          }
+        }
+      },
+      "USW00012839": {
+        "features": [
+          "station_id",
+          "prcp_mm",
+          "prcp_lag1_mm",
+          "prcp_rolling_3d_mean_mm",
+          "prcp_rolling_7d_mean_mm",
+          "prcp_rolling_14d_mean_mm",
+          "latitude",
+          "longitude",
+          "elevation_m"
+        ],
+        "partition_distributions": {
+          "train": {
+            "rows": 91323,
+            "heavy_rain_events": 449,
+            "normal_events": 90874,
+            "by_station": {
+              "USW00012960": {
+                "rows": 9439,
+                "heavy_rain_events": 112
+              },
+              "USW00023174": {
+                "rows": 18509,
+                "heavy_rain_events": 26
+              },
+              "USW00024233": {
+                "rows": 17261,
+                "heavy_rain_events": 18
+              },
+              "USW00094728": {
+                "rows": 46114,
+                "heavy_rain_events": 293
+              }
+            }
+          },
+          "validation": {
+            "rows": 46099,
+            "heavy_rain_events": 283,
+            "normal_events": 45816,
+            "by_station": {
+              "USW00012960": {
+                "rows": 11528,
+                "heavy_rain_events": 154
+              },
+              "USW00023174": {
+                "rows": 11529,
+                "heavy_rain_events": 16
+              },
+              "USW00024233": {
+                "rows": 11513,
+                "heavy_rain_events": 20
+              },
+              "USW00094728": {
+                "rows": 11529,
+                "heavy_rain_events": 93
+              }
+            }
+          },
+          "test": {
+            "rows": 28790,
+            "heavy_rain_events": 447,
+            "normal_events": 28343,
+            "by_station": {
+              "USW00012839": {
+                "rows": 28790,
+                "heavy_rain_events": 447
+              }
+            }
+          }
+        },
+        "model_comparison_validation": {
+          "logistic": {
+            "validation": {
+              "threshold": 0.769526,
+              "precision": 0.02956120092378753,
+              "recall": 0.22614840989399293,
+              "f1": 0.05228758169934641,
+              "f2": 0.09705793145283592,
+              "pr_auc": 0.036850876081904495,
+              "false_positive_rate": 0.04585734241313078,
+              "false_negative_rate": 0.773851590106007,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    43715,
+                    2101
+                  ],
+                  [
+                    219,
+                    64
+                  ]
+                ]
+              },
+              "false_positives": 2101,
+              "false_negatives": 219,
+              "true_positives": 64,
+              "true_negatives": 43715,
+              "heavy_rain_events": 283,
+              "normal_events": 45816
+            }
+          },
+          "hist_gradient": {
+            "validation": {
+              "threshold": 0.679061,
+              "precision": 0.02803248624574273,
+              "recall": 0.37809187279151946,
+              "f1": 0.05219512195121951,
+              "f2": 0.10810264699939383,
+              "pr_auc": 0.022651480492202843,
+              "false_positive_rate": 0.08097607822594727,
+              "false_negative_rate": 0.6219081272084805,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    42106,
+                    3710
+                  ],
+                  [
+                    176,
+                    107
+                  ]
+                ]
+              },
+              "false_positives": 3710,
+              "false_negatives": 176,
+              "true_positives": 107,
+              "true_negatives": 42106,
+              "heavy_rain_events": 283,
+              "normal_events": 45816
+            }
+          }
+        },
+        "selected_model": "hist_gradient",
+        "selected_threshold": 0.679061,
+        "test": {
+          "threshold": 0.679061,
+          "precision": 0.030193548387096775,
+          "recall": 0.5234899328859061,
+          "f1": 0.05709405880200073,
+          "f2": 0.12266722583350807,
+          "pr_auc": 0.0329913588135489,
+          "false_positive_rate": 0.26518011501958155,
+          "false_negative_rate": 0.47651006711409394,
+          "confusion_matrix": {
+            "labels": [
+              "NORMAL",
+              "HEAVY_RAIN"
+            ],
+            "matrix": [
+              [
+                20827,
+                7516
+              ],
+              [
+                213,
+                234
+              ]
+            ]
+          },
+          "false_positives": 7516,
+          "false_negatives": 213,
+          "true_positives": 234,
+          "true_negatives": 20827,
+          "heavy_rain_events": 447,
+          "normal_events": 28343,
+          "per_station": {
+            "USW00012839": {
+              "threshold": 0.679061,
+              "precision": 0.030193548387096775,
+              "recall": 0.5234899328859061,
+              "f1": 0.05709405880200073,
+              "f2": 0.12266722583350807,
+              "pr_auc": 0.0329913588135489,
+              "false_positive_rate": 0.26518011501958155,
+              "false_negative_rate": 0.47651006711409394,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    20827,
+                    7516
+                  ],
+                  [
+                    213,
+                    234
+                  ]
+                ]
+              },
+              "false_positives": 7516,
+              "false_negatives": 213,
+              "true_positives": 234,
+              "true_negatives": 20827,
+              "heavy_rain_events": 447,
+              "normal_events": 28343
+            }
+          }
+        }
+      },
+      "USW00024233": {
+        "features": [
+          "station_id",
+          "prcp_mm",
+          "prcp_lag1_mm",
+          "prcp_rolling_3d_mean_mm",
+          "prcp_rolling_7d_mean_mm",
+          "prcp_rolling_14d_mean_mm",
+          "latitude",
+          "longitude",
+          "elevation_m"
+        ],
+        "partition_distributions": {
+          "train": {
+            "rows": 91323,
+            "heavy_rain_events": 673,
+            "normal_events": 90650,
+            "by_station": {
+              "USW00012839": {
+                "rows": 17261,
+                "heavy_rain_events": 242
+              },
+              "USW00012960": {
+                "rows": 9439,
+                "heavy_rain_events": 112
+              },
+              "USW00023174": {
+                "rows": 18509,
+                "heavy_rain_events": 26
+              },
+              "USW00094728": {
+                "rows": 46114,
+                "heavy_rain_events": 293
+              }
+            }
+          },
+          "validation": {
+            "rows": 46115,
+            "heavy_rain_events": 468,
+            "normal_events": 45647,
+            "by_station": {
+              "USW00012839": {
+                "rows": 11529,
+                "heavy_rain_events": 205
+              },
+              "USW00012960": {
+                "rows": 11528,
+                "heavy_rain_events": 154
+              },
+              "USW00023174": {
+                "rows": 11529,
+                "heavy_rain_events": 16
+              },
+              "USW00094728": {
+                "rows": 11529,
+                "heavy_rain_events": 93
+              }
+            }
+          },
+          "test": {
+            "rows": 28774,
+            "heavy_rain_events": 38,
+            "normal_events": 28736,
+            "by_station": {
+              "USW00024233": {
+                "rows": 28774,
+                "heavy_rain_events": 38
+              }
+            }
+          }
+        },
+        "model_comparison_validation": {
+          "logistic": {
+            "validation": {
+              "threshold": 0.676507,
+              "precision": 0.03715745471435207,
+              "recall": 0.3418803418803419,
+              "f1": 0.06702974444909929,
+              "f2": 0.12949174490126256,
+              "pr_auc": 0.04301430191539217,
+              "false_positive_rate": 0.09082743663329464,
+              "false_negative_rate": 0.6581196581196581,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    41501,
+                    4146
+                  ],
+                  [
+                    308,
+                    160
+                  ]
+                ]
+              },
+              "false_positives": 4146,
+              "false_negatives": 308,
+              "true_positives": 160,
+              "true_negatives": 41501,
+              "heavy_rain_events": 468,
+              "normal_events": 45647
+            }
+          },
+          "hist_gradient": {
+            "validation": {
+              "threshold": 0.7,
+              "precision": 0.03675937122128174,
+              "recall": 0.3247863247863248,
+              "f1": 0.06604388442320226,
+              "f2": 0.1265190610953887,
+              "pr_auc": 0.03552646028427831,
+              "false_positive_rate": 0.0872565557429842,
+              "false_negative_rate": 0.6752136752136753,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    41664,
+                    3983
+                  ],
+                  [
+                    316,
+                    152
+                  ]
+                ]
+              },
+              "false_positives": 3983,
+              "false_negatives": 316,
+              "true_positives": 152,
+              "true_negatives": 41664,
+              "heavy_rain_events": 468,
+              "normal_events": 45647
+            }
+          }
+        },
+        "selected_model": "logistic",
+        "selected_threshold": 0.676507,
+        "test": {
+          "threshold": 0.676507,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0,
+          "pr_auc": 0.015730244598202343,
+          "false_positive_rate": 0.0006611915367483296,
+          "false_negative_rate": 1.0,
+          "confusion_matrix": {
+            "labels": [
+              "NORMAL",
+              "HEAVY_RAIN"
+            ],
+            "matrix": [
+              [
+                28717,
+                19
+              ],
+              [
+                38,
+                0
+              ]
+            ]
+          },
+          "false_positives": 19,
+          "false_negatives": 38,
+          "true_positives": 0,
+          "true_negatives": 28717,
+          "heavy_rain_events": 38,
+          "normal_events": 28736,
+          "per_station": {
+            "USW00024233": {
+              "threshold": 0.676507,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "f2": 0.0,
+              "pr_auc": 0.015730244598202343,
+              "false_positive_rate": 0.0006611915367483296,
+              "false_negative_rate": 1.0,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    28717,
+                    19
+                  ],
+                  [
+                    38,
+                    0
+                  ]
+                ]
+              },
+              "false_positives": 19,
+              "false_negatives": 38,
+              "true_positives": 0,
+              "true_negatives": 28717,
+              "heavy_rain_events": 38,
+              "normal_events": 28736
+            }
+          }
+        }
+      },
+      "USW00023174": {
+        "features": [
+          "station_id",
+          "prcp_mm",
+          "prcp_lag1_mm",
+          "prcp_rolling_3d_mean_mm",
+          "prcp_rolling_7d_mean_mm",
+          "prcp_rolling_14d_mean_mm",
+          "latitude",
+          "longitude",
+          "elevation_m"
+        ],
+        "partition_distributions": {
+          "train": {
+            "rows": 90075,
+            "heavy_rain_events": 665,
+            "normal_events": 89410,
+            "by_station": {
+              "USW00012839": {
+                "rows": 17261,
+                "heavy_rain_events": 242
+              },
+              "USW00012960": {
+                "rows": 9439,
+                "heavy_rain_events": 112
+              },
+              "USW00024233": {
+                "rows": 17261,
+                "heavy_rain_events": 18
+              },
+              "USW00094728": {
+                "rows": 46114,
+                "heavy_rain_events": 293
+              }
+            }
+          },
+          "validation": {
+            "rows": 46099,
+            "heavy_rain_events": 472,
+            "normal_events": 45627,
+            "by_station": {
+              "USW00012839": {
+                "rows": 11529,
+                "heavy_rain_events": 205
+              },
+              "USW00012960": {
+                "rows": 11528,
+                "heavy_rain_events": 154
+              },
+              "USW00024233": {
+                "rows": 11513,
+                "heavy_rain_events": 20
+              },
+              "USW00094728": {
+                "rows": 11529,
+                "heavy_rain_events": 93
+              }
+            }
+          },
+          "test": {
+            "rows": 30038,
+            "heavy_rain_events": 42,
+            "normal_events": 29996,
+            "by_station": {
+              "USW00023174": {
+                "rows": 30038,
+                "heavy_rain_events": 42
+              }
+            }
+          }
+        },
+        "model_comparison_validation": {
+          "logistic": {
+            "validation": {
+              "threshold": 0.679213,
+              "precision": 0.037396449704142014,
+              "recall": 0.3347457627118644,
+              "f1": 0.06727698530977219,
+              "f2": 0.1292327825944708,
+              "pr_auc": 0.04268278062656808,
+              "false_positive_rate": 0.08913581870383765,
+              "false_negative_rate": 0.6652542372881356,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    41560,
+                    4067
+                  ],
+                  [
+                    314,
+                    158
+                  ]
+                ]
+              },
+              "false_positives": 4067,
+              "false_negatives": 314,
+              "true_positives": 158,
+              "true_negatives": 41560,
+              "heavy_rain_events": 472,
+              "normal_events": 45627
+            }
+          },
+          "hist_gradient": {
+            "validation": {
+              "threshold": 0.62804,
+              "precision": 0.03321590337191746,
+              "recall": 0.4194915254237288,
+              "f1": 0.06155759365770247,
+              "f2": 0.12613071728882658,
+              "pr_auc": 0.03575828475361199,
+              "false_positive_rate": 0.12630679203103426,
+              "false_negative_rate": 0.5805084745762712,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    39864,
+                    5763
+                  ],
+                  [
+                    274,
+                    198
+                  ]
+                ]
+              },
+              "false_positives": 5763,
+              "false_negatives": 274,
+              "true_positives": 198,
+              "true_negatives": 39864,
+              "heavy_rain_events": 472,
+              "normal_events": 45627
+            }
+          }
+        },
+        "selected_model": "logistic",
+        "selected_threshold": 0.679213,
+        "test": {
+          "threshold": 0.679213,
+          "precision": 0.03804347826086957,
+          "recall": 0.16666666666666666,
+          "f1": 0.061946902654867256,
+          "f2": 0.09943181818181819,
+          "pr_auc": 0.014941269552006545,
+          "false_positive_rate": 0.0059007867715695425,
+          "false_negative_rate": 0.8333333333333334,
+          "confusion_matrix": {
+            "labels": [
+              "NORMAL",
+              "HEAVY_RAIN"
+            ],
+            "matrix": [
+              [
+                29819,
+                177
+              ],
+              [
+                35,
+                7
+              ]
+            ]
+          },
+          "false_positives": 177,
+          "false_negatives": 35,
+          "true_positives": 7,
+          "true_negatives": 29819,
+          "heavy_rain_events": 42,
+          "normal_events": 29996,
+          "per_station": {
+            "USW00023174": {
+              "threshold": 0.679213,
+              "precision": 0.03804347826086957,
+              "recall": 0.16666666666666666,
+              "f1": 0.061946902654867256,
+              "f2": 0.09943181818181819,
+              "pr_auc": 0.014941269552006545,
+              "false_positive_rate": 0.0059007867715695425,
+              "false_negative_rate": 0.8333333333333334,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    29819,
+                    177
+                  ],
+                  [
+                    35,
+                    7
+                  ]
+                ]
+              },
+              "false_positives": 177,
+              "false_negatives": 35,
+              "true_positives": 7,
+              "true_negatives": 29819,
+              "heavy_rain_events": 42,
+              "normal_events": 29996
+            }
+          }
+        }
+      },
+      "USW00012960": {
+        "features": [
+          "station_id",
+          "prcp_mm",
+          "prcp_lag1_mm",
+          "prcp_rolling_3d_mean_mm",
+          "prcp_rolling_7d_mean_mm",
+          "prcp_rolling_14d_mean_mm",
+          "latitude",
+          "longitude",
+          "elevation_m"
+        ],
+        "partition_distributions": {
+          "train": {
+            "rows": 99145,
+            "heavy_rain_events": 579,
+            "normal_events": 98566,
+            "by_station": {
+              "USW00012839": {
+                "rows": 17261,
+                "heavy_rain_events": 242
+              },
+              "USW00023174": {
+                "rows": 18509,
+                "heavy_rain_events": 26
+              },
+              "USW00024233": {
+                "rows": 17261,
+                "heavy_rain_events": 18
+              },
+              "USW00094728": {
+                "rows": 46114,
+                "heavy_rain_events": 293
+              }
+            }
+          },
+          "validation": {
+            "rows": 46100,
+            "heavy_rain_events": 334,
+            "normal_events": 45766,
+            "by_station": {
+              "USW00012839": {
+                "rows": 11529,
+                "heavy_rain_events": 205
+              },
+              "USW00023174": {
+                "rows": 11529,
+                "heavy_rain_events": 16
+              },
+              "USW00024233": {
+                "rows": 11513,
+                "heavy_rain_events": 20
+              },
+              "USW00094728": {
+                "rows": 11529,
+                "heavy_rain_events": 93
+              }
+            }
+          },
+          "test": {
+            "rows": 20967,
+            "heavy_rain_events": 266,
+            "normal_events": 20701,
+            "by_station": {
+              "USW00012960": {
+                "rows": 20967,
+                "heavy_rain_events": 266
+              }
+            }
+          }
+        },
+        "model_comparison_validation": {
+          "logistic": {
+            "validation": {
+              "threshold": 0.81204,
+              "precision": 0.045871559633027525,
+              "recall": 0.2245508982035928,
+              "f1": 0.07618080243778567,
+              "f2": 0.12622012790306295,
+              "pr_auc": 0.03667030278337997,
+              "false_positive_rate": 0.034086439715072324,
+              "false_negative_rate": 0.7754491017964071,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    44206,
+                    1560
+                  ],
+                  [
+                    259,
+                    75
+                  ]
+                ]
+              },
+              "false_positives": 1560,
+              "false_negatives": 259,
+              "true_positives": 75,
+              "true_negatives": 44206,
+              "heavy_rain_events": 334,
+              "normal_events": 45766
+            }
+          },
+          "hist_gradient": {
+            "validation": {
+              "threshold": 0.709589,
+              "precision": 0.03774226453587215,
+              "recall": 0.3323353293413174,
+              "f1": 0.06778625954198474,
+              "f2": 0.12976385316810848,
+              "pr_auc": 0.035737378549298246,
+              "false_positive_rate": 0.06183629768824018,
+              "false_negative_rate": 0.6676646706586826,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    42936,
+                    2830
+                  ],
+                  [
+                    223,
+                    111
+                  ]
+                ]
+              },
+              "false_positives": 2830,
+              "false_negatives": 223,
+              "true_positives": 111,
+              "true_negatives": 42936,
+              "heavy_rain_events": 334,
+              "normal_events": 45766
+            }
+          }
+        },
+        "selected_model": "hist_gradient",
+        "selected_threshold": 0.709589,
+        "test": {
+          "threshold": 0.709589,
+          "precision": 0.0471311475409836,
+          "recall": 0.08646616541353383,
+          "f1": 0.0610079575596817,
+          "f2": 0.0740979381443299,
+          "pr_auc": 0.02776849368610005,
+          "false_positive_rate": 0.02246268296217574,
+          "false_negative_rate": 0.9135338345864662,
+          "confusion_matrix": {
+            "labels": [
+              "NORMAL",
+              "HEAVY_RAIN"
+            ],
+            "matrix": [
+              [
+                20236,
+                465
+              ],
+              [
+                243,
+                23
+              ]
+            ]
+          },
+          "false_positives": 465,
+          "false_negatives": 243,
+          "true_positives": 23,
+          "true_negatives": 20236,
+          "heavy_rain_events": 266,
+          "normal_events": 20701,
+          "per_station": {
+            "USW00012960": {
+              "threshold": 0.709589,
+              "precision": 0.0471311475409836,
+              "recall": 0.08646616541353383,
+              "f1": 0.0610079575596817,
+              "f2": 0.0740979381443299,
+              "pr_auc": 0.02776849368610005,
+              "false_positive_rate": 0.02246268296217574,
+              "false_negative_rate": 0.9135338345864662,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    20236,
+                    465
+                  ],
+                  [
+                    243,
+                    23
+                  ]
+                ]
+              },
+              "false_positives": 465,
+              "false_negatives": 243,
+              "true_positives": 23,
+              "true_negatives": 20236,
+              "heavy_rain_events": 266,
+              "normal_events": 20701
+            }
+          }
+        }
+      }
+    },
+    "precipitation_temperature": {
+      "USW00094728": {
+        "features": [
+          "station_id",
+          "prcp_mm",
+          "prcp_lag1_mm",
+          "prcp_rolling_3d_mean_mm",
+          "prcp_rolling_7d_mean_mm",
+          "prcp_rolling_14d_mean_mm",
+          "latitude",
+          "longitude",
+          "elevation_m",
+          "tmax_c",
+          "tmin_c"
+        ],
+        "partition_distributions": {
+          "train": {
+            "rows": 84549,
+            "heavy_rain_events": 594,
+            "normal_events": 83955,
+            "by_station": {
+              "USW00012839": {
+                "rows": 22782,
+                "heavy_rain_events": 339
+              },
+              "USW00012960": {
+                "rows": 14960,
+                "heavy_rain_events": 194
+              },
+              "USW00023174": {
+                "rows": 24030,
+                "heavy_rain_events": 33
+              },
+              "USW00024233": {
+                "rows": 22777,
+                "heavy_rain_events": 28
+              }
+            }
+          },
+          "validation": {
+            "rows": 24020,
+            "heavy_rain_events": 199,
+            "normal_events": 23821,
+            "by_station": {
+              "USW00012839": {
+                "rows": 6008,
+                "heavy_rain_events": 108
+              },
+              "USW00012960": {
+                "rows": 6007,
+                "heavy_rain_events": 72
+              },
+              "USW00023174": {
+                "rows": 6008,
+                "heavy_rain_events": 9
+              },
+              "USW00024233": {
+                "rows": 5997,
+                "heavy_rain_events": 10
+              }
+            }
+          },
+          "test": {
+            "rows": 57643,
+            "heavy_rain_events": 386,
+            "normal_events": 57257,
+            "by_station": {
+              "USW00094728": {
+                "rows": 57643,
+                "heavy_rain_events": 386
+              }
+            }
+          }
+        },
+        "model_comparison_validation": {
+          "logistic": {
+            "validation": {
+              "threshold": 0.859357,
+              "precision": 0.06993006993006994,
+              "recall": 0.25125628140703515,
+              "f1": 0.10940919037199125,
+              "f2": 0.16545334215751156,
+              "pr_auc": 0.06154641178793513,
+              "false_positive_rate": 0.02791654422568322,
+              "false_negative_rate": 0.7487437185929648,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    23156,
+                    665
+                  ],
+                  [
+                    149,
+                    50
+                  ]
+                ]
+              },
+              "false_positives": 665,
+              "false_negatives": 149,
+              "true_positives": 50,
+              "true_negatives": 23156,
+              "heavy_rain_events": 199,
+              "normal_events": 23821
+            }
+          },
+          "hist_gradient": {
+            "validation": {
+              "threshold": 0.749431,
+              "precision": 0.04843918191603875,
+              "recall": 0.45226130653266333,
+              "f1": 0.08750607681088965,
+              "f2": 0.16955538809344384,
+              "pr_auc": 0.052700126200187235,
+              "false_positive_rate": 0.07422022585113976,
+              "false_negative_rate": 0.5477386934673367,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    22053,
+                    1768
+                  ],
+                  [
+                    109,
+                    90
+                  ]
+                ]
+              },
+              "false_positives": 1768,
+              "false_negatives": 109,
+              "true_positives": 90,
+              "true_negatives": 22053,
+              "heavy_rain_events": 199,
+              "normal_events": 23821
+            }
+          }
+        },
+        "selected_model": "hist_gradient",
+        "selected_threshold": 0.749431,
+        "test": {
+          "threshold": 0.749431,
+          "precision": 0.033962264150943396,
+          "recall": 0.023316062176165803,
+          "f1": 0.027649769585253458,
+          "f2": 0.02487562189054726,
+          "pr_auc": 0.011777226033390799,
+          "false_positive_rate": 0.004471069039593412,
+          "false_negative_rate": 0.9766839378238342,
+          "confusion_matrix": {
+            "labels": [
+              "NORMAL",
+              "HEAVY_RAIN"
+            ],
+            "matrix": [
+              [
+                57001,
+                256
+              ],
+              [
+                377,
+                9
+              ]
+            ]
+          },
+          "false_positives": 256,
+          "false_negatives": 377,
+          "true_positives": 9,
+          "true_negatives": 57001,
+          "heavy_rain_events": 386,
+          "normal_events": 57257,
+          "per_station": {
+            "USW00094728": {
+              "threshold": 0.749431,
+              "precision": 0.033962264150943396,
+              "recall": 0.023316062176165803,
+              "f1": 0.027649769585253458,
+              "f2": 0.02487562189054726,
+              "pr_auc": 0.011777226033390799,
+              "false_positive_rate": 0.004471069039593412,
+              "false_negative_rate": 0.9766839378238342,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    57001,
+                    256
+                  ],
+                  [
+                    377,
+                    9
+                  ]
+                ]
+              },
+              "false_positives": 256,
+              "false_negatives": 377,
+              "true_positives": 9,
+              "true_negatives": 57001,
+              "heavy_rain_events": 386,
+              "normal_events": 57257
+            }
+          }
+        }
+      },
+      "USW00012839": {
+        "features": [
+          "station_id",
+          "prcp_mm",
+          "prcp_lag1_mm",
+          "prcp_rolling_3d_mean_mm",
+          "prcp_rolling_7d_mean_mm",
+          "prcp_rolling_14d_mean_mm",
+          "latitude",
+          "longitude",
+          "elevation_m",
+          "tmax_c",
+          "tmin_c"
+        ],
+        "partition_distributions": {
+          "train": {
+            "rows": 91323,
+            "heavy_rain_events": 449,
+            "normal_events": 90874,
+            "by_station": {
+              "USW00012960": {
+                "rows": 9439,
+                "heavy_rain_events": 112
+              },
+              "USW00023174": {
+                "rows": 18509,
+                "heavy_rain_events": 26
+              },
+              "USW00024233": {
+                "rows": 17261,
+                "heavy_rain_events": 18
+              },
+              "USW00094728": {
+                "rows": 46114,
+                "heavy_rain_events": 293
+              }
+            }
+          },
+          "validation": {
+            "rows": 46099,
+            "heavy_rain_events": 283,
+            "normal_events": 45816,
+            "by_station": {
+              "USW00012960": {
+                "rows": 11528,
+                "heavy_rain_events": 154
+              },
+              "USW00023174": {
+                "rows": 11529,
+                "heavy_rain_events": 16
+              },
+              "USW00024233": {
+                "rows": 11513,
+                "heavy_rain_events": 20
+              },
+              "USW00094728": {
+                "rows": 11529,
+                "heavy_rain_events": 93
+              }
+            }
+          },
+          "test": {
+            "rows": 28790,
+            "heavy_rain_events": 447,
+            "normal_events": 28343,
+            "by_station": {
+              "USW00012839": {
+                "rows": 28790,
+                "heavy_rain_events": 447
+              }
+            }
+          }
+        },
+        "model_comparison_validation": {
+          "logistic": {
+            "validation": {
+              "threshold": 0.8,
+              "precision": 0.03247232472324723,
+              "recall": 0.31095406360424027,
+              "f1": 0.058803875709989975,
+              "f2": 0.11452368558042685,
+              "pr_auc": 0.04293892295510155,
+              "false_positive_rate": 0.0572289156626506,
+              "false_negative_rate": 0.6890459363957597,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    43194,
+                    2622
+                  ],
+                  [
+                    195,
+                    88
+                  ]
+                ]
+              },
+              "false_positives": 2622,
+              "false_negatives": 195,
+              "true_positives": 88,
+              "true_negatives": 43194,
+              "heavy_rain_events": 283,
+              "normal_events": 45816
+            }
+          },
+          "hist_gradient": {
+            "validation": {
+              "threshold": 0.683252,
+              "precision": 0.030278007156619872,
+              "recall": 0.38869257950530034,
+              "f1": 0.056179775280898875,
+              "f2": 0.11542497376705141,
+              "pr_auc": 0.03198721086658328,
+              "false_positive_rate": 0.07689453466038065,
+              "false_negative_rate": 0.6113074204946997,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    42293,
+                    3523
+                  ],
+                  [
+                    173,
+                    110
+                  ]
+                ]
+              },
+              "false_positives": 3523,
+              "false_negatives": 173,
+              "true_positives": 110,
+              "true_negatives": 42293,
+              "heavy_rain_events": 283,
+              "normal_events": 45816
+            }
+          }
+        },
+        "selected_model": "hist_gradient",
+        "selected_threshold": 0.683252,
+        "test": {
+          "threshold": 0.683252,
+          "precision": 0.020966763298051642,
+          "recall": 0.6957494407158836,
+          "f1": 0.04070680628272251,
+          "f2": 0.09355634438361109,
+          "pr_auc": 0.03693304993991055,
+          "false_positive_rate": 0.5123663691211234,
+          "false_negative_rate": 0.3042505592841163,
+          "confusion_matrix": {
+            "labels": [
+              "NORMAL",
+              "HEAVY_RAIN"
+            ],
+            "matrix": [
+              [
+                13821,
+                14522
+              ],
+              [
+                136,
+                311
+              ]
+            ]
+          },
+          "false_positives": 14522,
+          "false_negatives": 136,
+          "true_positives": 311,
+          "true_negatives": 13821,
+          "heavy_rain_events": 447,
+          "normal_events": 28343,
+          "per_station": {
+            "USW00012839": {
+              "threshold": 0.683252,
+              "precision": 0.020966763298051642,
+              "recall": 0.6957494407158836,
+              "f1": 0.04070680628272251,
+              "f2": 0.09355634438361109,
+              "pr_auc": 0.03693304993991055,
+              "false_positive_rate": 0.5123663691211234,
+              "false_negative_rate": 0.3042505592841163,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    13821,
+                    14522
+                  ],
+                  [
+                    136,
+                    311
+                  ]
+                ]
+              },
+              "false_positives": 14522,
+              "false_negatives": 136,
+              "true_positives": 311,
+              "true_negatives": 13821,
+              "heavy_rain_events": 447,
+              "normal_events": 28343
+            }
+          }
+        }
+      },
+      "USW00024233": {
+        "features": [
+          "station_id",
+          "prcp_mm",
+          "prcp_lag1_mm",
+          "prcp_rolling_3d_mean_mm",
+          "prcp_rolling_7d_mean_mm",
+          "prcp_rolling_14d_mean_mm",
+          "latitude",
+          "longitude",
+          "elevation_m",
+          "tmax_c",
+          "tmin_c"
+        ],
+        "partition_distributions": {
+          "train": {
+            "rows": 91323,
+            "heavy_rain_events": 673,
+            "normal_events": 90650,
+            "by_station": {
+              "USW00012839": {
+                "rows": 17261,
+                "heavy_rain_events": 242
+              },
+              "USW00012960": {
+                "rows": 9439,
+                "heavy_rain_events": 112
+              },
+              "USW00023174": {
+                "rows": 18509,
+                "heavy_rain_events": 26
+              },
+              "USW00094728": {
+                "rows": 46114,
+                "heavy_rain_events": 293
+              }
+            }
+          },
+          "validation": {
+            "rows": 46115,
+            "heavy_rain_events": 468,
+            "normal_events": 45647,
+            "by_station": {
+              "USW00012839": {
+                "rows": 11529,
+                "heavy_rain_events": 205
+              },
+              "USW00012960": {
+                "rows": 11528,
+                "heavy_rain_events": 154
+              },
+              "USW00023174": {
+                "rows": 11529,
+                "heavy_rain_events": 16
+              },
+              "USW00094728": {
+                "rows": 11529,
+                "heavy_rain_events": 93
+              }
+            }
+          },
+          "test": {
+            "rows": 28774,
+            "heavy_rain_events": 38,
+            "normal_events": 28736,
+            "by_station": {
+              "USW00024233": {
+                "rows": 28774,
+                "heavy_rain_events": 38
+              }
+            }
+          }
+        },
+        "model_comparison_validation": {
+          "logistic": {
+            "validation": {
+              "threshold": 0.739778,
+              "precision": 0.04165554072096128,
+              "recall": 0.3333333333333333,
+              "f1": 0.074056491811061,
+              "f2": 0.1388641623642514,
+              "pr_auc": 0.04756408177333823,
+              "false_positive_rate": 0.07862510132100686,
+              "false_negative_rate": 0.6666666666666666,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    42058,
+                    3589
+                  ],
+                  [
+                    312,
+                    156
+                  ]
+                ]
+              },
+              "false_positives": 3589,
+              "false_negatives": 312,
+              "true_positives": 156,
+              "true_negatives": 42058,
+              "heavy_rain_events": 468,
+              "normal_events": 45647
+            }
+          },
+          "hist_gradient": {
+            "validation": {
+              "threshold": 0.673476,
+              "precision": 0.040666340029397355,
+              "recall": 0.3547008547008547,
+              "f1": 0.07296703296703297,
+              "f2": 0.1394020826335237,
+              "pr_auc": 0.043495215617583835,
+              "false_positive_rate": 0.08578877034635354,
+              "false_negative_rate": 0.6452991452991453,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    41731,
+                    3916
+                  ],
+                  [
+                    302,
+                    166
+                  ]
+                ]
+              },
+              "false_positives": 3916,
+              "false_negatives": 302,
+              "true_positives": 166,
+              "true_negatives": 41731,
+              "heavy_rain_events": 468,
+              "normal_events": 45647
+            }
+          }
+        },
+        "selected_model": "hist_gradient",
+        "selected_threshold": 0.673476,
+        "test": {
+          "threshold": 0.673476,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0,
+          "pr_auc": 0.002600970769621064,
+          "false_positive_rate": 0.0020183741648106906,
+          "false_negative_rate": 1.0,
+          "confusion_matrix": {
+            "labels": [
+              "NORMAL",
+              "HEAVY_RAIN"
+            ],
+            "matrix": [
+              [
+                28678,
+                58
+              ],
+              [
+                38,
+                0
+              ]
+            ]
+          },
+          "false_positives": 58,
+          "false_negatives": 38,
+          "true_positives": 0,
+          "true_negatives": 28678,
+          "heavy_rain_events": 38,
+          "normal_events": 28736,
+          "per_station": {
+            "USW00024233": {
+              "threshold": 0.673476,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "f2": 0.0,
+              "pr_auc": 0.002600970769621064,
+              "false_positive_rate": 0.0020183741648106906,
+              "false_negative_rate": 1.0,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    28678,
+                    58
+                  ],
+                  [
+                    38,
+                    0
+                  ]
+                ]
+              },
+              "false_positives": 58,
+              "false_negatives": 38,
+              "true_positives": 0,
+              "true_negatives": 28678,
+              "heavy_rain_events": 38,
+              "normal_events": 28736
+            }
+          }
+        }
+      },
+      "USW00023174": {
+        "features": [
+          "station_id",
+          "prcp_mm",
+          "prcp_lag1_mm",
+          "prcp_rolling_3d_mean_mm",
+          "prcp_rolling_7d_mean_mm",
+          "prcp_rolling_14d_mean_mm",
+          "latitude",
+          "longitude",
+          "elevation_m",
+          "tmax_c",
+          "tmin_c"
+        ],
+        "partition_distributions": {
+          "train": {
+            "rows": 90075,
+            "heavy_rain_events": 665,
+            "normal_events": 89410,
+            "by_station": {
+              "USW00012839": {
+                "rows": 17261,
+                "heavy_rain_events": 242
+              },
+              "USW00012960": {
+                "rows": 9439,
+                "heavy_rain_events": 112
+              },
+              "USW00024233": {
+                "rows": 17261,
+                "heavy_rain_events": 18
+              },
+              "USW00094728": {
+                "rows": 46114,
+                "heavy_rain_events": 293
+              }
+            }
+          },
+          "validation": {
+            "rows": 46099,
+            "heavy_rain_events": 472,
+            "normal_events": 45627,
+            "by_station": {
+              "USW00012839": {
+                "rows": 11529,
+                "heavy_rain_events": 205
+              },
+              "USW00012960": {
+                "rows": 11528,
+                "heavy_rain_events": 154
+              },
+              "USW00024233": {
+                "rows": 11513,
+                "heavy_rain_events": 20
+              },
+              "USW00094728": {
+                "rows": 11529,
+                "heavy_rain_events": 93
+              }
+            }
+          },
+          "test": {
+            "rows": 30038,
+            "heavy_rain_events": 42,
+            "normal_events": 29996,
+            "by_station": {
+              "USW00023174": {
+                "rows": 30038,
+                "heavy_rain_events": 42
+              }
+            }
+          }
+        },
+        "model_comparison_validation": {
+          "logistic": {
+            "validation": {
+              "threshold": 0.8,
+              "precision": 0.05752212389380531,
+              "recall": 0.22033898305084745,
+              "f1": 0.0912280701754386,
+              "f2": 0.14069264069264067,
+              "pr_auc": 0.04754766129842265,
+              "false_positive_rate": 0.037346308107041884,
+              "false_negative_rate": 0.7796610169491526,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    43923,
+                    1704
+                  ],
+                  [
+                    368,
+                    104
+                  ]
+                ]
+              },
+              "false_positives": 1704,
+              "false_negatives": 368,
+              "true_positives": 104,
+              "true_negatives": 43923,
+              "heavy_rain_events": 472,
+              "normal_events": 45627
+            }
+          },
+          "hist_gradient": {
+            "validation": {
+              "threshold": 0.696615,
+              "precision": 0.04686584651435267,
+              "recall": 0.3389830508474576,
+              "f1": 0.08234688625836335,
+              "f2": 0.15088645794039987,
+              "pr_auc": 0.044247927012622604,
+              "false_positive_rate": 0.07131742170206237,
+              "false_negative_rate": 0.6610169491525424,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    42373,
+                    3254
+                  ],
+                  [
+                    312,
+                    160
+                  ]
+                ]
+              },
+              "false_positives": 3254,
+              "false_negatives": 312,
+              "true_positives": 160,
+              "true_negatives": 42373,
+              "heavy_rain_events": 472,
+              "normal_events": 45627
+            }
+          }
+        },
+        "selected_model": "hist_gradient",
+        "selected_threshold": 0.696615,
+        "test": {
+          "threshold": 0.696615,
+          "precision": 0.0020304568527918783,
+          "recall": 0.047619047619047616,
+          "f1": 0.0038948393378773127,
+          "f2": 0.008673026886383347,
+          "pr_auc": 0.005372471090503031,
+          "false_positive_rate": 0.03277103613815175,
+          "false_negative_rate": 0.9523809523809523,
+          "confusion_matrix": {
+            "labels": [
+              "NORMAL",
+              "HEAVY_RAIN"
+            ],
+            "matrix": [
+              [
+                29013,
+                983
+              ],
+              [
+                40,
+                2
+              ]
+            ]
+          },
+          "false_positives": 983,
+          "false_negatives": 40,
+          "true_positives": 2,
+          "true_negatives": 29013,
+          "heavy_rain_events": 42,
+          "normal_events": 29996,
+          "per_station": {
+            "USW00023174": {
+              "threshold": 0.696615,
+              "precision": 0.0020304568527918783,
+              "recall": 0.047619047619047616,
+              "f1": 0.0038948393378773127,
+              "f2": 0.008673026886383347,
+              "pr_auc": 0.005372471090503031,
+              "false_positive_rate": 0.03277103613815175,
+              "false_negative_rate": 0.9523809523809523,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    29013,
+                    983
+                  ],
+                  [
+                    40,
+                    2
+                  ]
+                ]
+              },
+              "false_positives": 983,
+              "false_negatives": 40,
+              "true_positives": 2,
+              "true_negatives": 29013,
+              "heavy_rain_events": 42,
+              "normal_events": 29996
+            }
+          }
+        }
+      },
+      "USW00012960": {
+        "features": [
+          "station_id",
+          "prcp_mm",
+          "prcp_lag1_mm",
+          "prcp_rolling_3d_mean_mm",
+          "prcp_rolling_7d_mean_mm",
+          "prcp_rolling_14d_mean_mm",
+          "latitude",
+          "longitude",
+          "elevation_m",
+          "tmax_c",
+          "tmin_c"
+        ],
+        "partition_distributions": {
+          "train": {
+            "rows": 99145,
+            "heavy_rain_events": 579,
+            "normal_events": 98566,
+            "by_station": {
+              "USW00012839": {
+                "rows": 17261,
+                "heavy_rain_events": 242
+              },
+              "USW00023174": {
+                "rows": 18509,
+                "heavy_rain_events": 26
+              },
+              "USW00024233": {
+                "rows": 17261,
+                "heavy_rain_events": 18
+              },
+              "USW00094728": {
+                "rows": 46114,
+                "heavy_rain_events": 293
+              }
+            }
+          },
+          "validation": {
+            "rows": 46100,
+            "heavy_rain_events": 334,
+            "normal_events": 45766,
+            "by_station": {
+              "USW00012839": {
+                "rows": 11529,
+                "heavy_rain_events": 205
+              },
+              "USW00023174": {
+                "rows": 11529,
+                "heavy_rain_events": 16
+              },
+              "USW00024233": {
+                "rows": 11513,
+                "heavy_rain_events": 20
+              },
+              "USW00094728": {
+                "rows": 11529,
+                "heavy_rain_events": 93
+              }
+            }
+          },
+          "test": {
+            "rows": 20967,
+            "heavy_rain_events": 266,
+            "normal_events": 20701,
+            "by_station": {
+              "USW00012960": {
+                "rows": 20967,
+                "heavy_rain_events": 266
+              }
+            }
+          }
+        },
+        "model_comparison_validation": {
+          "logistic": {
+            "validation": {
+              "threshold": 0.802505,
+              "precision": 0.04277286135693215,
+              "recall": 0.26047904191616766,
+              "f1": 0.07347972972972973,
+              "f2": 0.12908011869436203,
+              "pr_auc": 0.03902327925902919,
+              "false_positive_rate": 0.0425424987982345,
+              "false_negative_rate": 0.7395209580838323,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    43819,
+                    1947
+                  ],
+                  [
+                    247,
+                    87
+                  ]
+                ]
+              },
+              "false_positives": 1947,
+              "false_negatives": 247,
+              "true_positives": 87,
+              "true_negatives": 43819,
+              "heavy_rain_events": 334,
+              "normal_events": 45766
+            }
+          },
+          "hist_gradient": {
+            "validation": {
+              "threshold": 0.679781,
+              "precision": 0.03480278422273782,
+              "recall": 0.4041916167664671,
+              "f1": 0.06408734868264894,
+              "f2": 0.1294343240651965,
+              "pr_auc": 0.03932637060360429,
+              "false_positive_rate": 0.08180745531617357,
+              "false_negative_rate": 0.5958083832335329,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    42022,
+                    3744
+                  ],
+                  [
+                    199,
+                    135
+                  ]
+                ]
+              },
+              "false_positives": 3744,
+              "false_negatives": 199,
+              "true_positives": 135,
+              "true_negatives": 42022,
+              "heavy_rain_events": 334,
+              "normal_events": 45766
+            }
+          }
+        },
+        "selected_model": "hist_gradient",
+        "selected_threshold": 0.679781,
+        "test": {
+          "threshold": 0.679781,
+          "precision": 0.033299180327868855,
+          "recall": 0.24436090225563908,
+          "f1": 0.058611361587015326,
+          "f2": 0.10775862068965518,
+          "pr_auc": 0.0380427024701405,
+          "false_positive_rate": 0.09115501666586155,
+          "false_negative_rate": 0.7556390977443609,
+          "confusion_matrix": {
+            "labels": [
+              "NORMAL",
+              "HEAVY_RAIN"
+            ],
+            "matrix": [
+              [
+                18814,
+                1887
+              ],
+              [
+                201,
+                65
+              ]
+            ]
+          },
+          "false_positives": 1887,
+          "false_negatives": 201,
+          "true_positives": 65,
+          "true_negatives": 18814,
+          "heavy_rain_events": 266,
+          "normal_events": 20701,
+          "per_station": {
+            "USW00012960": {
+              "threshold": 0.679781,
+              "precision": 0.033299180327868855,
+              "recall": 0.24436090225563908,
+              "f1": 0.058611361587015326,
+              "f2": 0.10775862068965518,
+              "pr_auc": 0.0380427024701405,
+              "false_positive_rate": 0.09115501666586155,
+              "false_negative_rate": 0.7556390977443609,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    18814,
+                    1887
+                  ],
+                  [
+                    201,
+                    65
+                  ]
+                ]
+              },
+              "false_positives": 1887,
+              "false_negatives": 201,
+              "true_positives": 65,
+              "true_negatives": 18814,
+              "heavy_rain_events": 266,
+              "normal_events": 20701
+            }
+          }
+        }
+      }
+    },
+    "precipitation_atmospheric": {
+      "USW00094728": {
+        "features": [
+          "station_id",
+          "prcp_mm",
+          "prcp_lag1_mm",
+          "prcp_rolling_3d_mean_mm",
+          "prcp_rolling_7d_mean_mm",
+          "prcp_rolling_14d_mean_mm",
+          "latitude",
+          "longitude",
+          "elevation_m",
+          "awnd_ms",
+          "wsf2_ms",
+          "wsf5_ms",
+          "wdf2_deg",
+          "wdf5_deg",
+          "rhav_pct",
+          "rhmn_pct",
+          "rhmx_pct",
+          "aslp_hpa",
+          "astp_hpa"
+        ],
+        "partition_distributions": {
+          "train": {
+            "rows": 84549,
+            "heavy_rain_events": 594,
+            "normal_events": 83955,
+            "by_station": {
+              "USW00012839": {
+                "rows": 22782,
+                "heavy_rain_events": 339
+              },
+              "USW00012960": {
+                "rows": 14960,
+                "heavy_rain_events": 194
+              },
+              "USW00023174": {
+                "rows": 24030,
+                "heavy_rain_events": 33
+              },
+              "USW00024233": {
+                "rows": 22777,
+                "heavy_rain_events": 28
+              }
+            }
+          },
+          "validation": {
+            "rows": 24020,
+            "heavy_rain_events": 199,
+            "normal_events": 23821,
+            "by_station": {
+              "USW00012839": {
+                "rows": 6008,
+                "heavy_rain_events": 108
+              },
+              "USW00012960": {
+                "rows": 6007,
+                "heavy_rain_events": 72
+              },
+              "USW00023174": {
+                "rows": 6008,
+                "heavy_rain_events": 9
+              },
+              "USW00024233": {
+                "rows": 5997,
+                "heavy_rain_events": 10
+              }
+            }
+          },
+          "test": {
+            "rows": 57643,
+            "heavy_rain_events": 386,
+            "normal_events": 57257,
+            "by_station": {
+              "USW00094728": {
+                "rows": 57643,
+                "heavy_rain_events": 386
+              }
+            }
+          }
+        },
+        "model_comparison_validation": {
+          "logistic": {
+            "validation": {
+              "threshold": 0.887607,
+              "precision": 0.06429277942631058,
+              "recall": 0.32663316582914576,
+              "f1": 0.10743801652892562,
+              "f2": 0.17985611510791366,
+              "pr_auc": 0.06956048834519254,
+              "false_positive_rate": 0.03971285840225012,
+              "false_negative_rate": 0.6733668341708543,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    22875,
+                    946
+                  ],
+                  [
+                    134,
+                    65
+                  ]
+                ]
+              },
+              "false_positives": 946,
+              "false_negatives": 134,
+              "true_positives": 65,
+              "true_negatives": 22875,
+              "heavy_rain_events": 199,
+              "normal_events": 23821
+            }
+          },
+          "hist_gradient": {
+            "validation": {
+              "threshold": 0.709537,
+              "precision": 0.03928905519176801,
+              "recall": 0.4221105527638191,
+              "f1": 0.07188703465982028,
+              "f2": 0.1431492842535787,
+              "pr_auc": 0.033178083694685875,
+              "false_positive_rate": 0.08622643885647117,
+              "false_negative_rate": 0.5778894472361809,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    21767,
+                    2054
+                  ],
+                  [
+                    115,
+                    84
+                  ]
+                ]
+              },
+              "false_positives": 2054,
+              "false_negatives": 115,
+              "true_positives": 84,
+              "true_negatives": 21767,
+              "heavy_rain_events": 199,
+              "normal_events": 23821
+            }
+          }
+        },
+        "selected_model": "logistic",
+        "selected_threshold": 0.887607,
+        "test": {
+          "threshold": 0.887607,
+          "precision": 0.024308466051969825,
+          "recall": 0.07512953367875648,
+          "f1": 0.03673210892970234,
+          "f2": 0.052977712824260136,
+          "pr_auc": 0.013254663602097875,
+          "false_positive_rate": 0.020329392039401296,
+          "false_negative_rate": 0.9248704663212435,
+          "confusion_matrix": {
+            "labels": [
+              "NORMAL",
+              "HEAVY_RAIN"
+            ],
+            "matrix": [
+              [
+                56093,
+                1164
+              ],
+              [
+                357,
+                29
+              ]
+            ]
+          },
+          "false_positives": 1164,
+          "false_negatives": 357,
+          "true_positives": 29,
+          "true_negatives": 56093,
+          "heavy_rain_events": 386,
+          "normal_events": 57257,
+          "per_station": {
+            "USW00094728": {
+              "threshold": 0.887607,
+              "precision": 0.024308466051969825,
+              "recall": 0.07512953367875648,
+              "f1": 0.03673210892970234,
+              "f2": 0.052977712824260136,
+              "pr_auc": 0.013254663602097875,
+              "false_positive_rate": 0.020329392039401296,
+              "false_negative_rate": 0.9248704663212435,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    56093,
+                    1164
+                  ],
+                  [
+                    357,
+                    29
+                  ]
+                ]
+              },
+              "false_positives": 1164,
+              "false_negatives": 357,
+              "true_positives": 29,
+              "true_negatives": 56093,
+              "heavy_rain_events": 386,
+              "normal_events": 57257
+            }
+          }
+        }
+      },
+      "USW00012839": {
+        "features": [
+          "station_id",
+          "prcp_mm",
+          "prcp_lag1_mm",
+          "prcp_rolling_3d_mean_mm",
+          "prcp_rolling_7d_mean_mm",
+          "prcp_rolling_14d_mean_mm",
+          "latitude",
+          "longitude",
+          "elevation_m",
+          "awnd_ms",
+          "wsf2_ms",
+          "wsf5_ms",
+          "wdf2_deg",
+          "wdf5_deg",
+          "rhav_pct",
+          "rhmn_pct",
+          "rhmx_pct",
+          "aslp_hpa",
+          "astp_hpa"
+        ],
+        "partition_distributions": {
+          "train": {
+            "rows": 91323,
+            "heavy_rain_events": 449,
+            "normal_events": 90874,
+            "by_station": {
+              "USW00012960": {
+                "rows": 9439,
+                "heavy_rain_events": 112
+              },
+              "USW00023174": {
+                "rows": 18509,
+                "heavy_rain_events": 26
+              },
+              "USW00024233": {
+                "rows": 17261,
+                "heavy_rain_events": 18
+              },
+              "USW00094728": {
+                "rows": 46114,
+                "heavy_rain_events": 293
+              }
+            }
+          },
+          "validation": {
+            "rows": 46099,
+            "heavy_rain_events": 283,
+            "normal_events": 45816,
+            "by_station": {
+              "USW00012960": {
+                "rows": 11528,
+                "heavy_rain_events": 154
+              },
+              "USW00023174": {
+                "rows": 11529,
+                "heavy_rain_events": 16
+              },
+              "USW00024233": {
+                "rows": 11513,
+                "heavy_rain_events": 20
+              },
+              "USW00094728": {
+                "rows": 11529,
+                "heavy_rain_events": 93
+              }
+            }
+          },
+          "test": {
+            "rows": 28790,
+            "heavy_rain_events": 447,
+            "normal_events": 28343,
+            "by_station": {
+              "USW00012839": {
+                "rows": 28790,
+                "heavy_rain_events": 447
+              }
+            }
+          }
+        },
+        "model_comparison_validation": {
+          "logistic": {
+            "validation": {
+              "threshold": 0.872094,
+              "precision": 0.04053000779423227,
+              "recall": 0.18374558303886926,
+              "f1": 0.06641123882503193,
+              "f2": 0.10766045548654246,
+              "pr_auc": 0.043184865484597865,
+              "false_positive_rate": 0.026868342936965252,
+              "false_negative_rate": 0.8162544169611308,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    44585,
+                    1231
+                  ],
+                  [
+                    231,
+                    52
+                  ]
+                ]
+              },
+              "false_positives": 1231,
+              "false_negatives": 231,
+              "true_positives": 52,
+              "true_negatives": 44585,
+              "heavy_rain_events": 283,
+              "normal_events": 45816
+            }
+          },
+          "hist_gradient": {
+            "validation": {
+              "threshold": 0.747487,
+              "precision": 0.03262642740619902,
+              "recall": 0.21201413427561838,
+              "f1": 0.05655042412818096,
+              "f2": 0.10097610232245036,
+              "pr_auc": 0.023438678872983034,
+              "false_positive_rate": 0.03882922996333159,
+              "false_negative_rate": 0.7879858657243817,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    44037,
+                    1779
+                  ],
+                  [
+                    223,
+                    60
+                  ]
+                ]
+              },
+              "false_positives": 1779,
+              "false_negatives": 223,
+              "true_positives": 60,
+              "true_negatives": 44037,
+              "heavy_rain_events": 283,
+              "normal_events": 45816
+            }
+          }
+        },
+        "selected_model": "logistic",
+        "selected_threshold": 0.872094,
+        "test": {
+          "threshold": 0.872094,
+          "precision": 0.03341725795376516,
+          "recall": 0.32662192393736017,
+          "f1": 0.0606312292358804,
+          "f2": 0.11856423582913755,
+          "pr_auc": 0.03825939987632673,
+          "false_positive_rate": 0.14899622481741523,
+          "false_negative_rate": 0.6733780760626398,
+          "confusion_matrix": {
+            "labels": [
+              "NORMAL",
+              "HEAVY_RAIN"
+            ],
+            "matrix": [
+              [
+                24120,
+                4223
+              ],
+              [
+                301,
+                146
+              ]
+            ]
+          },
+          "false_positives": 4223,
+          "false_negatives": 301,
+          "true_positives": 146,
+          "true_negatives": 24120,
+          "heavy_rain_events": 447,
+          "normal_events": 28343,
+          "per_station": {
+            "USW00012839": {
+              "threshold": 0.872094,
+              "precision": 0.03341725795376516,
+              "recall": 0.32662192393736017,
+              "f1": 0.0606312292358804,
+              "f2": 0.11856423582913755,
+              "pr_auc": 0.03825939987632673,
+              "false_positive_rate": 0.14899622481741523,
+              "false_negative_rate": 0.6733780760626398,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    24120,
+                    4223
+                  ],
+                  [
+                    301,
+                    146
+                  ]
+                ]
+              },
+              "false_positives": 4223,
+              "false_negatives": 301,
+              "true_positives": 146,
+              "true_negatives": 24120,
+              "heavy_rain_events": 447,
+              "normal_events": 28343
+            }
+          }
+        }
+      },
+      "USW00024233": {
+        "features": [
+          "station_id",
+          "prcp_mm",
+          "prcp_lag1_mm",
+          "prcp_rolling_3d_mean_mm",
+          "prcp_rolling_7d_mean_mm",
+          "prcp_rolling_14d_mean_mm",
+          "latitude",
+          "longitude",
+          "elevation_m",
+          "awnd_ms",
+          "wsf2_ms",
+          "wsf5_ms",
+          "wdf2_deg",
+          "wdf5_deg",
+          "rhav_pct",
+          "rhmn_pct",
+          "rhmx_pct",
+          "aslp_hpa",
+          "astp_hpa"
+        ],
+        "partition_distributions": {
+          "train": {
+            "rows": 91323,
+            "heavy_rain_events": 673,
+            "normal_events": 90650,
+            "by_station": {
+              "USW00012839": {
+                "rows": 17261,
+                "heavy_rain_events": 242
+              },
+              "USW00012960": {
+                "rows": 9439,
+                "heavy_rain_events": 112
+              },
+              "USW00023174": {
+                "rows": 18509,
+                "heavy_rain_events": 26
+              },
+              "USW00094728": {
+                "rows": 46114,
+                "heavy_rain_events": 293
+              }
+            }
+          },
+          "validation": {
+            "rows": 46115,
+            "heavy_rain_events": 468,
+            "normal_events": 45647,
+            "by_station": {
+              "USW00012839": {
+                "rows": 11529,
+                "heavy_rain_events": 205
+              },
+              "USW00012960": {
+                "rows": 11528,
+                "heavy_rain_events": 154
+              },
+              "USW00023174": {
+                "rows": 11529,
+                "heavy_rain_events": 16
+              },
+              "USW00094728": {
+                "rows": 11529,
+                "heavy_rain_events": 93
+              }
+            }
+          },
+          "test": {
+            "rows": 28774,
+            "heavy_rain_events": 38,
+            "normal_events": 28736,
+            "by_station": {
+              "USW00024233": {
+                "rows": 28774,
+                "heavy_rain_events": 38
+              }
+            }
+          }
+        },
+        "model_comparison_validation": {
+          "logistic": {
+            "validation": {
+              "threshold": 0.691182,
+              "precision": 0.039473684210526314,
+              "recall": 0.3269230769230769,
+              "f1": 0.07044198895027624,
+              "f2": 0.13308977035490607,
+              "pr_auc": 0.043961270879691525,
+              "false_positive_rate": 0.08156067211426819,
+              "false_negative_rate": 0.6730769230769231,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    41924,
+                    3723
+                  ],
+                  [
+                    315,
+                    153
+                  ]
+                ]
+              },
+              "false_positives": 3723,
+              "false_negatives": 315,
+              "true_positives": 153,
+              "true_negatives": 41924,
+              "heavy_rain_events": 468,
+              "normal_events": 45647
+            }
+          },
+          "hist_gradient": {
+            "validation": {
+              "threshold": 0.7081,
+              "precision": 0.04225352112676056,
+              "recall": 0.26282051282051283,
+              "f1": 0.07280260432080497,
+              "f2": 0.1285803888772737,
+              "pr_auc": 0.03634222748020092,
+              "false_positive_rate": 0.06107739829561636,
+              "false_negative_rate": 0.7371794871794872,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    42859,
+                    2788
+                  ],
+                  [
+                    345,
+                    123
+                  ]
+                ]
+              },
+              "false_positives": 2788,
+              "false_negatives": 345,
+              "true_positives": 123,
+              "true_negatives": 42859,
+              "heavy_rain_events": 468,
+              "normal_events": 45647
+            }
+          }
+        },
+        "selected_model": "logistic",
+        "selected_threshold": 0.691182,
+        "test": {
+          "threshold": 0.691182,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0,
+          "pr_auc": 0.01625871331817619,
+          "false_positive_rate": 0.000869988864142539,
+          "false_negative_rate": 1.0,
+          "confusion_matrix": {
+            "labels": [
+              "NORMAL",
+              "HEAVY_RAIN"
+            ],
+            "matrix": [
+              [
+                28711,
+                25
+              ],
+              [
+                38,
+                0
+              ]
+            ]
+          },
+          "false_positives": 25,
+          "false_negatives": 38,
+          "true_positives": 0,
+          "true_negatives": 28711,
+          "heavy_rain_events": 38,
+          "normal_events": 28736,
+          "per_station": {
+            "USW00024233": {
+              "threshold": 0.691182,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "f2": 0.0,
+              "pr_auc": 0.01625871331817619,
+              "false_positive_rate": 0.000869988864142539,
+              "false_negative_rate": 1.0,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    28711,
+                    25
+                  ],
+                  [
+                    38,
+                    0
+                  ]
+                ]
+              },
+              "false_positives": 25,
+              "false_negatives": 38,
+              "true_positives": 0,
+              "true_negatives": 28711,
+              "heavy_rain_events": 38,
+              "normal_events": 28736
+            }
+          }
+        }
+      },
+      "USW00023174": {
+        "features": [
+          "station_id",
+          "prcp_mm",
+          "prcp_lag1_mm",
+          "prcp_rolling_3d_mean_mm",
+          "prcp_rolling_7d_mean_mm",
+          "prcp_rolling_14d_mean_mm",
+          "latitude",
+          "longitude",
+          "elevation_m",
+          "awnd_ms",
+          "wsf2_ms",
+          "wsf5_ms",
+          "wdf2_deg",
+          "wdf5_deg",
+          "rhav_pct",
+          "rhmn_pct",
+          "rhmx_pct",
+          "aslp_hpa",
+          "astp_hpa"
+        ],
+        "partition_distributions": {
+          "train": {
+            "rows": 90075,
+            "heavy_rain_events": 665,
+            "normal_events": 89410,
+            "by_station": {
+              "USW00012839": {
+                "rows": 17261,
+                "heavy_rain_events": 242
+              },
+              "USW00012960": {
+                "rows": 9439,
+                "heavy_rain_events": 112
+              },
+              "USW00024233": {
+                "rows": 17261,
+                "heavy_rain_events": 18
+              },
+              "USW00094728": {
+                "rows": 46114,
+                "heavy_rain_events": 293
+              }
+            }
+          },
+          "validation": {
+            "rows": 46099,
+            "heavy_rain_events": 472,
+            "normal_events": 45627,
+            "by_station": {
+              "USW00012839": {
+                "rows": 11529,
+                "heavy_rain_events": 205
+              },
+              "USW00012960": {
+                "rows": 11528,
+                "heavy_rain_events": 154
+              },
+              "USW00024233": {
+                "rows": 11513,
+                "heavy_rain_events": 20
+              },
+              "USW00094728": {
+                "rows": 11529,
+                "heavy_rain_events": 93
+              }
+            }
+          },
+          "test": {
+            "rows": 30038,
+            "heavy_rain_events": 42,
+            "normal_events": 29996,
+            "by_station": {
+              "USW00023174": {
+                "rows": 30038,
+                "heavy_rain_events": 42
+              }
+            }
+          }
+        },
+        "model_comparison_validation": {
+          "logistic": {
+            "validation": {
+              "threshold": 0.748435,
+              "precision": 0.04306036139946175,
+              "recall": 0.23728813559322035,
+              "f1": 0.07289293849658314,
+              "f2": 0.1247493873914012,
+              "pr_auc": 0.04295517657170329,
+              "false_positive_rate": 0.05455103337935871,
+              "false_negative_rate": 0.7627118644067796,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    43138,
+                    2489
+                  ],
+                  [
+                    360,
+                    112
+                  ]
+                ]
+              },
+              "false_positives": 2489,
+              "false_negatives": 360,
+              "true_positives": 112,
+              "true_negatives": 43138,
+              "heavy_rain_events": 472,
+              "normal_events": 45627
+            }
+          },
+          "hist_gradient": {
+            "validation": {
+              "threshold": 0.610661,
+              "precision": 0.03450807635829662,
+              "recall": 0.3983050847457627,
+              "f1": 0.06351351351351352,
+              "f2": 0.12813522355507087,
+              "pr_auc": 0.03346947125967158,
+              "false_positive_rate": 0.1152826177482631,
+              "false_negative_rate": 0.6016949152542372,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    40367,
+                    5260
+                  ],
+                  [
+                    284,
+                    188
+                  ]
+                ]
+              },
+              "false_positives": 5260,
+              "false_negatives": 284,
+              "true_positives": 188,
+              "true_negatives": 40367,
+              "heavy_rain_events": 472,
+              "normal_events": 45627
+            }
+          }
+        },
+        "selected_model": "hist_gradient",
+        "selected_threshold": 0.610661,
+        "test": {
+          "threshold": 0.610661,
+          "precision": 0.009692132269099202,
+          "recall": 0.40476190476190477,
+          "f1": 0.01893095768374165,
+          "f2": 0.04422476586888657,
+          "pr_auc": 0.018556780193278638,
+          "false_positive_rate": 0.057907721029470595,
+          "false_negative_rate": 0.5952380952380952,
+          "confusion_matrix": {
+            "labels": [
+              "NORMAL",
+              "HEAVY_RAIN"
+            ],
+            "matrix": [
+              [
+                28259,
+                1737
+              ],
+              [
+                25,
+                17
+              ]
+            ]
+          },
+          "false_positives": 1737,
+          "false_negatives": 25,
+          "true_positives": 17,
+          "true_negatives": 28259,
+          "heavy_rain_events": 42,
+          "normal_events": 29996,
+          "per_station": {
+            "USW00023174": {
+              "threshold": 0.610661,
+              "precision": 0.009692132269099202,
+              "recall": 0.40476190476190477,
+              "f1": 0.01893095768374165,
+              "f2": 0.04422476586888657,
+              "pr_auc": 0.018556780193278638,
+              "false_positive_rate": 0.057907721029470595,
+              "false_negative_rate": 0.5952380952380952,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    28259,
+                    1737
+                  ],
+                  [
+                    25,
+                    17
+                  ]
+                ]
+              },
+              "false_positives": 1737,
+              "false_negatives": 25,
+              "true_positives": 17,
+              "true_negatives": 28259,
+              "heavy_rain_events": 42,
+              "normal_events": 29996
+            }
+          }
+        }
+      },
+      "USW00012960": {
+        "features": [
+          "station_id",
+          "prcp_mm",
+          "prcp_lag1_mm",
+          "prcp_rolling_3d_mean_mm",
+          "prcp_rolling_7d_mean_mm",
+          "prcp_rolling_14d_mean_mm",
+          "latitude",
+          "longitude",
+          "elevation_m",
+          "awnd_ms",
+          "wsf2_ms",
+          "wsf5_ms",
+          "wdf2_deg",
+          "wdf5_deg",
+          "rhav_pct",
+          "rhmn_pct",
+          "rhmx_pct",
+          "aslp_hpa",
+          "astp_hpa"
+        ],
+        "partition_distributions": {
+          "train": {
+            "rows": 99145,
+            "heavy_rain_events": 579,
+            "normal_events": 98566,
+            "by_station": {
+              "USW00012839": {
+                "rows": 17261,
+                "heavy_rain_events": 242
+              },
+              "USW00023174": {
+                "rows": 18509,
+                "heavy_rain_events": 26
+              },
+              "USW00024233": {
+                "rows": 17261,
+                "heavy_rain_events": 18
+              },
+              "USW00094728": {
+                "rows": 46114,
+                "heavy_rain_events": 293
+              }
+            }
+          },
+          "validation": {
+            "rows": 46100,
+            "heavy_rain_events": 334,
+            "normal_events": 45766,
+            "by_station": {
+              "USW00012839": {
+                "rows": 11529,
+                "heavy_rain_events": 205
+              },
+              "USW00023174": {
+                "rows": 11529,
+                "heavy_rain_events": 16
+              },
+              "USW00024233": {
+                "rows": 11513,
+                "heavy_rain_events": 20
+              },
+              "USW00094728": {
+                "rows": 11529,
+                "heavy_rain_events": 93
+              }
+            }
+          },
+          "test": {
+            "rows": 20967,
+            "heavy_rain_events": 266,
+            "normal_events": 20701,
+            "by_station": {
+              "USW00012960": {
+                "rows": 20967,
+                "heavy_rain_events": 266
+              }
+            }
+          }
+        },
+        "model_comparison_validation": {
+          "logistic": {
+            "validation": {
+              "threshold": 0.803421,
+              "precision": 0.04542626011200996,
+              "recall": 0.218562874251497,
+              "f1": 0.07521895929933024,
+              "f2": 0.12402310567448183,
+              "pr_auc": 0.03633170266929803,
+              "false_positive_rate": 0.033518332386487784,
+              "false_negative_rate": 0.781437125748503,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    44232,
+                    1534
+                  ],
+                  [
+                    261,
+                    73
+                  ]
+                ]
+              },
+              "false_positives": 1534,
+              "false_negatives": 261,
+              "true_positives": 73,
+              "true_negatives": 44232,
+              "heavy_rain_events": 334,
+              "normal_events": 45766
+            }
+          },
+          "hist_gradient": {
+            "validation": {
+              "threshold": 0.752343,
+              "precision": 0.03862660944206009,
+              "recall": 0.2155688622754491,
+              "f1": 0.06551410373066424,
+              "f2": 0.1125,
+              "pr_auc": 0.030708088061872384,
+              "false_positive_rate": 0.0391557051085959,
+              "false_negative_rate": 0.7844311377245509,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    43974,
+                    1792
+                  ],
+                  [
+                    262,
+                    72
+                  ]
+                ]
+              },
+              "false_positives": 1792,
+              "false_negatives": 262,
+              "true_positives": 72,
+              "true_negatives": 43974,
+              "heavy_rain_events": 334,
+              "normal_events": 45766
+            }
+          }
+        },
+        "selected_model": "logistic",
+        "selected_threshold": 0.803421,
+        "test": {
+          "threshold": 0.803421,
+          "precision": 0.053156146179401995,
+          "recall": 0.12030075187969924,
+          "f1": 0.07373271889400922,
+          "f2": 0.09603841536614648,
+          "pr_auc": 0.04344222496054305,
+          "false_positive_rate": 0.02753490169557026,
+          "false_negative_rate": 0.8796992481203008,
+          "confusion_matrix": {
+            "labels": [
+              "NORMAL",
+              "HEAVY_RAIN"
+            ],
+            "matrix": [
+              [
+                20131,
+                570
+              ],
+              [
+                234,
+                32
+              ]
+            ]
+          },
+          "false_positives": 570,
+          "false_negatives": 234,
+          "true_positives": 32,
+          "true_negatives": 20131,
+          "heavy_rain_events": 266,
+          "normal_events": 20701,
+          "per_station": {
+            "USW00012960": {
+              "threshold": 0.803421,
+              "precision": 0.053156146179401995,
+              "recall": 0.12030075187969924,
+              "f1": 0.07373271889400922,
+              "f2": 0.09603841536614648,
+              "pr_auc": 0.04344222496054305,
+              "false_positive_rate": 0.02753490169557026,
+              "false_negative_rate": 0.8796992481203008,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    20131,
+                    570
+                  ],
+                  [
+                    234,
+                    32
+                  ]
+                ]
+              },
+              "false_positives": 570,
+              "false_negatives": 234,
+              "true_positives": 32,
+              "true_negatives": 20131,
+              "heavy_rain_events": 266,
+              "normal_events": 20701
+            }
+          }
+        }
+      }
+    },
+    "precipitation_seasonal": {
+      "USW00094728": {
+        "features": [
+          "station_id",
+          "prcp_mm",
+          "prcp_lag1_mm",
+          "prcp_rolling_3d_mean_mm",
+          "prcp_rolling_7d_mean_mm",
+          "prcp_rolling_14d_mean_mm",
+          "latitude",
+          "longitude",
+          "elevation_m",
+          "day_of_year_sin",
+          "day_of_year_cos",
+          "month_sin",
+          "month_cos"
+        ],
+        "partition_distributions": {
+          "train": {
+            "rows": 84549,
+            "heavy_rain_events": 594,
+            "normal_events": 83955,
+            "by_station": {
+              "USW00012839": {
+                "rows": 22782,
+                "heavy_rain_events": 339
+              },
+              "USW00012960": {
+                "rows": 14960,
+                "heavy_rain_events": 194
+              },
+              "USW00023174": {
+                "rows": 24030,
+                "heavy_rain_events": 33
+              },
+              "USW00024233": {
+                "rows": 22777,
+                "heavy_rain_events": 28
+              }
+            }
+          },
+          "validation": {
+            "rows": 24020,
+            "heavy_rain_events": 199,
+            "normal_events": 23821,
+            "by_station": {
+              "USW00012839": {
+                "rows": 6008,
+                "heavy_rain_events": 108
+              },
+              "USW00012960": {
+                "rows": 6007,
+                "heavy_rain_events": 72
+              },
+              "USW00023174": {
+                "rows": 6008,
+                "heavy_rain_events": 9
+              },
+              "USW00024233": {
+                "rows": 5997,
+                "heavy_rain_events": 10
+              }
+            }
+          },
+          "test": {
+            "rows": 57643,
+            "heavy_rain_events": 386,
+            "normal_events": 57257,
+            "by_station": {
+              "USW00094728": {
+                "rows": 57643,
+                "heavy_rain_events": 386
+              }
+            }
+          }
+        },
+        "model_comparison_validation": {
+          "logistic": {
+            "validation": {
+              "threshold": 0.728367,
+              "precision": 0.043010752688172046,
+              "recall": 0.38190954773869346,
+              "f1": 0.07731434384537131,
+              "f2": 0.14826375341396802,
+              "pr_auc": 0.05813744165746698,
+              "false_positive_rate": 0.0709877838881659,
+              "false_negative_rate": 0.6180904522613065,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    22130,
+                    1691
+                  ],
+                  [
+                    123,
+                    76
+                  ]
+                ]
+              },
+              "false_positives": 1691,
+              "false_negatives": 123,
+              "true_positives": 76,
+              "true_negatives": 22130,
+              "heavy_rain_events": 199,
+              "normal_events": 23821
+            }
+          },
+          "hist_gradient": {
+            "validation": {
+              "threshold": 0.727796,
+              "precision": 0.04180522565320665,
+              "recall": 0.44221105527638194,
+              "f1": 0.0763888888888889,
+              "f2": 0.15167183729748362,
+              "pr_auc": 0.04729448333903387,
+              "false_positive_rate": 0.08467318752361362,
+              "false_negative_rate": 0.5577889447236181,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    21804,
+                    2017
+                  ],
+                  [
+                    111,
+                    88
+                  ]
+                ]
+              },
+              "false_positives": 2017,
+              "false_negatives": 111,
+              "true_positives": 88,
+              "true_negatives": 21804,
+              "heavy_rain_events": 199,
+              "normal_events": 23821
+            }
+          }
+        },
+        "selected_model": "hist_gradient",
+        "selected_threshold": 0.727796,
+        "test": {
+          "threshold": 0.727796,
+          "precision": 0.024691358024691357,
+          "recall": 0.0051813471502590676,
+          "f1": 0.008565310492505354,
+          "f2": 0.006153846153846154,
+          "pr_auc": 0.009256434081265162,
+          "false_positive_rate": 0.0013797439614370295,
+          "false_negative_rate": 0.9948186528497409,
+          "confusion_matrix": {
+            "labels": [
+              "NORMAL",
+              "HEAVY_RAIN"
+            ],
+            "matrix": [
+              [
+                57178,
+                79
+              ],
+              [
+                384,
+                2
+              ]
+            ]
+          },
+          "false_positives": 79,
+          "false_negatives": 384,
+          "true_positives": 2,
+          "true_negatives": 57178,
+          "heavy_rain_events": 386,
+          "normal_events": 57257,
+          "per_station": {
+            "USW00094728": {
+              "threshold": 0.727796,
+              "precision": 0.024691358024691357,
+              "recall": 0.0051813471502590676,
+              "f1": 0.008565310492505354,
+              "f2": 0.006153846153846154,
+              "pr_auc": 0.009256434081265162,
+              "false_positive_rate": 0.0013797439614370295,
+              "false_negative_rate": 0.9948186528497409,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    57178,
+                    79
+                  ],
+                  [
+                    384,
+                    2
+                  ]
+                ]
+              },
+              "false_positives": 79,
+              "false_negatives": 384,
+              "true_positives": 2,
+              "true_negatives": 57178,
+              "heavy_rain_events": 386,
+              "normal_events": 57257
+            }
+          }
+        }
+      },
+      "USW00012839": {
+        "features": [
+          "station_id",
+          "prcp_mm",
+          "prcp_lag1_mm",
+          "prcp_rolling_3d_mean_mm",
+          "prcp_rolling_7d_mean_mm",
+          "prcp_rolling_14d_mean_mm",
+          "latitude",
+          "longitude",
+          "elevation_m",
+          "day_of_year_sin",
+          "day_of_year_cos",
+          "month_sin",
+          "month_cos"
+        ],
+        "partition_distributions": {
+          "train": {
+            "rows": 91323,
+            "heavy_rain_events": 449,
+            "normal_events": 90874,
+            "by_station": {
+              "USW00012960": {
+                "rows": 9439,
+                "heavy_rain_events": 112
+              },
+              "USW00023174": {
+                "rows": 18509,
+                "heavy_rain_events": 26
+              },
+              "USW00024233": {
+                "rows": 17261,
+                "heavy_rain_events": 18
+              },
+              "USW00094728": {
+                "rows": 46114,
+                "heavy_rain_events": 293
+              }
+            }
+          },
+          "validation": {
+            "rows": 46099,
+            "heavy_rain_events": 283,
+            "normal_events": 45816,
+            "by_station": {
+              "USW00012960": {
+                "rows": 11528,
+                "heavy_rain_events": 154
+              },
+              "USW00023174": {
+                "rows": 11529,
+                "heavy_rain_events": 16
+              },
+              "USW00024233": {
+                "rows": 11513,
+                "heavy_rain_events": 20
+              },
+              "USW00094728": {
+                "rows": 11529,
+                "heavy_rain_events": 93
+              }
+            }
+          },
+          "test": {
+            "rows": 28790,
+            "heavy_rain_events": 447,
+            "normal_events": 28343,
+            "by_station": {
+              "USW00012839": {
+                "rows": 28790,
+                "heavy_rain_events": 447
+              }
+            }
+          }
+        },
+        "model_comparison_validation": {
+          "logistic": {
+            "validation": {
+              "threshold": 0.786997,
+              "precision": 0.029791459781529295,
+              "recall": 0.21201413427561838,
+              "f1": 0.052242054854157595,
+              "f2": 0.09535918626827719,
+              "pr_auc": 0.03726542525981267,
+              "false_positive_rate": 0.04264885629474419,
+              "false_negative_rate": 0.7879858657243817,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    43862,
+                    1954
+                  ],
+                  [
+                    223,
+                    60
+                  ]
+                ]
+              },
+              "false_positives": 1954,
+              "false_negatives": 223,
+              "true_positives": 60,
+              "true_negatives": 43862,
+              "heavy_rain_events": 283,
+              "normal_events": 45816
+            }
+          },
+          "hist_gradient": {
+            "validation": {
+              "threshold": 0.676075,
+              "precision": 0.031554212823095,
+              "recall": 0.3321554770318021,
+              "f1": 0.05763335377069283,
+              "f2": 0.11432741425443932,
+              "pr_auc": 0.026369467052410854,
+              "false_positive_rate": 0.06296926837785927,
+              "false_negative_rate": 0.6678445229681979,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    42931,
+                    2885
+                  ],
+                  [
+                    189,
+                    94
+                  ]
+                ]
+              },
+              "false_positives": 2885,
+              "false_negatives": 189,
+              "true_positives": 94,
+              "true_negatives": 42931,
+              "heavy_rain_events": 283,
+              "normal_events": 45816
+            }
+          }
+        },
+        "selected_model": "hist_gradient",
+        "selected_threshold": 0.676075,
+        "test": {
+          "threshold": 0.676075,
+          "precision": 0.032037590773173856,
+          "recall": 0.5033557046979866,
+          "f1": 0.060240963855421686,
+          "f2": 0.12768130745658834,
+          "pr_auc": 0.03610485637083783,
+          "false_positive_rate": 0.23984758141340012,
+          "false_negative_rate": 0.4966442953020134,
+          "confusion_matrix": {
+            "labels": [
+              "NORMAL",
+              "HEAVY_RAIN"
+            ],
+            "matrix": [
+              [
+                21545,
+                6798
+              ],
+              [
+                222,
+                225
+              ]
+            ]
+          },
+          "false_positives": 6798,
+          "false_negatives": 222,
+          "true_positives": 225,
+          "true_negatives": 21545,
+          "heavy_rain_events": 447,
+          "normal_events": 28343,
+          "per_station": {
+            "USW00012839": {
+              "threshold": 0.676075,
+              "precision": 0.032037590773173856,
+              "recall": 0.5033557046979866,
+              "f1": 0.060240963855421686,
+              "f2": 0.12768130745658834,
+              "pr_auc": 0.03610485637083783,
+              "false_positive_rate": 0.23984758141340012,
+              "false_negative_rate": 0.4966442953020134,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    21545,
+                    6798
+                  ],
+                  [
+                    222,
+                    225
+                  ]
+                ]
+              },
+              "false_positives": 6798,
+              "false_negatives": 222,
+              "true_positives": 225,
+              "true_negatives": 21545,
+              "heavy_rain_events": 447,
+              "normal_events": 28343
+            }
+          }
+        }
+      },
+      "USW00024233": {
+        "features": [
+          "station_id",
+          "prcp_mm",
+          "prcp_lag1_mm",
+          "prcp_rolling_3d_mean_mm",
+          "prcp_rolling_7d_mean_mm",
+          "prcp_rolling_14d_mean_mm",
+          "latitude",
+          "longitude",
+          "elevation_m",
+          "day_of_year_sin",
+          "day_of_year_cos",
+          "month_sin",
+          "month_cos"
+        ],
+        "partition_distributions": {
+          "train": {
+            "rows": 91323,
+            "heavy_rain_events": 673,
+            "normal_events": 90650,
+            "by_station": {
+              "USW00012839": {
+                "rows": 17261,
+                "heavy_rain_events": 242
+              },
+              "USW00012960": {
+                "rows": 9439,
+                "heavy_rain_events": 112
+              },
+              "USW00023174": {
+                "rows": 18509,
+                "heavy_rain_events": 26
+              },
+              "USW00094728": {
+                "rows": 46114,
+                "heavy_rain_events": 293
+              }
+            }
+          },
+          "validation": {
+            "rows": 46115,
+            "heavy_rain_events": 468,
+            "normal_events": 45647,
+            "by_station": {
+              "USW00012839": {
+                "rows": 11529,
+                "heavy_rain_events": 205
+              },
+              "USW00012960": {
+                "rows": 11528,
+                "heavy_rain_events": 154
+              },
+              "USW00023174": {
+                "rows": 11529,
+                "heavy_rain_events": 16
+              },
+              "USW00094728": {
+                "rows": 11529,
+                "heavy_rain_events": 93
+              }
+            }
+          },
+          "test": {
+            "rows": 28774,
+            "heavy_rain_events": 38,
+            "normal_events": 28736,
+            "by_station": {
+              "USW00024233": {
+                "rows": 28774,
+                "heavy_rain_events": 38
+              }
+            }
+          }
+        },
+        "model_comparison_validation": {
+          "logistic": {
+            "validation": {
+              "threshold": 0.732038,
+              "precision": 0.0426649163111257,
+              "recall": 0.2777777777777778,
+              "f1": 0.07396870554765292,
+              "f2": 0.1321406789997967,
+              "pr_auc": 0.0447833092617,
+              "false_positive_rate": 0.06390343286524854,
+              "false_negative_rate": 0.7222222222222222,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    42730,
+                    2917
+                  ],
+                  [
+                    338,
+                    130
+                  ]
+                ]
+              },
+              "false_positives": 2917,
+              "false_negatives": 338,
+              "true_positives": 130,
+              "true_negatives": 42730,
+              "heavy_rain_events": 468,
+              "normal_events": 45647
+            }
+          },
+          "hist_gradient": {
+            "validation": {
+              "threshold": 0.7,
+              "precision": 0.03878309335810497,
+              "recall": 0.35683760683760685,
+              "f1": 0.06996229576874738,
+              "f2": 0.13515700874069278,
+              "pr_auc": 0.038861388293017274,
+              "false_positive_rate": 0.09067408592021381,
+              "false_negative_rate": 0.6431623931623932,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    41508,
+                    4139
+                  ],
+                  [
+                    301,
+                    167
+                  ]
+                ]
+              },
+              "false_positives": 4139,
+              "false_negatives": 301,
+              "true_positives": 167,
+              "true_negatives": 41508,
+              "heavy_rain_events": 468,
+              "normal_events": 45647
+            }
+          }
+        },
+        "selected_model": "hist_gradient",
+        "selected_threshold": 0.7,
+        "test": {
+          "threshold": 0.7,
+          "precision": 0.0037735849056603774,
+          "recall": 0.02631578947368421,
+          "f1": 0.006600660066006601,
+          "f2": 0.011990407673860913,
+          "pr_auc": 0.003140275248729528,
+          "false_positive_rate": 0.009187082405345211,
+          "false_negative_rate": 0.9736842105263158,
+          "confusion_matrix": {
+            "labels": [
+              "NORMAL",
+              "HEAVY_RAIN"
+            ],
+            "matrix": [
+              [
+                28472,
+                264
+              ],
+              [
+                37,
+                1
+              ]
+            ]
+          },
+          "false_positives": 264,
+          "false_negatives": 37,
+          "true_positives": 1,
+          "true_negatives": 28472,
+          "heavy_rain_events": 38,
+          "normal_events": 28736,
+          "per_station": {
+            "USW00024233": {
+              "threshold": 0.7,
+              "precision": 0.0037735849056603774,
+              "recall": 0.02631578947368421,
+              "f1": 0.006600660066006601,
+              "f2": 0.011990407673860913,
+              "pr_auc": 0.003140275248729528,
+              "false_positive_rate": 0.009187082405345211,
+              "false_negative_rate": 0.9736842105263158,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    28472,
+                    264
+                  ],
+                  [
+                    37,
+                    1
+                  ]
+                ]
+              },
+              "false_positives": 264,
+              "false_negatives": 37,
+              "true_positives": 1,
+              "true_negatives": 28472,
+              "heavy_rain_events": 38,
+              "normal_events": 28736
+            }
+          }
+        }
+      },
+      "USW00023174": {
+        "features": [
+          "station_id",
+          "prcp_mm",
+          "prcp_lag1_mm",
+          "prcp_rolling_3d_mean_mm",
+          "prcp_rolling_7d_mean_mm",
+          "prcp_rolling_14d_mean_mm",
+          "latitude",
+          "longitude",
+          "elevation_m",
+          "day_of_year_sin",
+          "day_of_year_cos",
+          "month_sin",
+          "month_cos"
+        ],
+        "partition_distributions": {
+          "train": {
+            "rows": 90075,
+            "heavy_rain_events": 665,
+            "normal_events": 89410,
+            "by_station": {
+              "USW00012839": {
+                "rows": 17261,
+                "heavy_rain_events": 242
+              },
+              "USW00012960": {
+                "rows": 9439,
+                "heavy_rain_events": 112
+              },
+              "USW00024233": {
+                "rows": 17261,
+                "heavy_rain_events": 18
+              },
+              "USW00094728": {
+                "rows": 46114,
+                "heavy_rain_events": 293
+              }
+            }
+          },
+          "validation": {
+            "rows": 46099,
+            "heavy_rain_events": 472,
+            "normal_events": 45627,
+            "by_station": {
+              "USW00012839": {
+                "rows": 11529,
+                "heavy_rain_events": 205
+              },
+              "USW00012960": {
+                "rows": 11528,
+                "heavy_rain_events": 154
+              },
+              "USW00024233": {
+                "rows": 11513,
+                "heavy_rain_events": 20
+              },
+              "USW00094728": {
+                "rows": 11529,
+                "heavy_rain_events": 93
+              }
+            }
+          },
+          "test": {
+            "rows": 30038,
+            "heavy_rain_events": 42,
+            "normal_events": 29996,
+            "by_station": {
+              "USW00023174": {
+                "rows": 30038,
+                "heavy_rain_events": 42
+              }
+            }
+          }
+        },
+        "model_comparison_validation": {
+          "logistic": {
+            "validation": {
+              "threshold": 0.75021,
+              "precision": 0.04470323065364388,
+              "recall": 0.2521186440677966,
+              "f1": 0.07594128908742821,
+              "f2": 0.13076923076923078,
+              "pr_auc": 0.044537724436173674,
+              "false_positive_rate": 0.05573454314331427,
+              "false_negative_rate": 0.7478813559322034,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    43084,
+                    2543
+                  ],
+                  [
+                    353,
+                    119
+                  ]
+                ]
+              },
+              "false_positives": 2543,
+              "false_negatives": 353,
+              "true_positives": 119,
+              "true_negatives": 43084,
+              "heavy_rain_events": 472,
+              "normal_events": 45627
+            }
+          },
+          "hist_gradient": {
+            "validation": {
+              "threshold": 0.733111,
+              "precision": 0.043490951546993575,
+              "recall": 0.3156779661016949,
+              "f1": 0.07644946126218574,
+              "f2": 0.14019570944674445,
+              "pr_auc": 0.04145027089641859,
+              "false_positive_rate": 0.07182150919411752,
+              "false_negative_rate": 0.684322033898305,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    42350,
+                    3277
+                  ],
+                  [
+                    323,
+                    149
+                  ]
+                ]
+              },
+              "false_positives": 3277,
+              "false_negatives": 323,
+              "true_positives": 149,
+              "true_negatives": 42350,
+              "heavy_rain_events": 472,
+              "normal_events": 45627
+            }
+          }
+        },
+        "selected_model": "hist_gradient",
+        "selected_threshold": 0.733111,
+        "test": {
+          "threshold": 0.733111,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0,
+          "pr_auc": 0.002813793963529916,
+          "false_positive_rate": 0.007300973463128417,
+          "false_negative_rate": 1.0,
+          "confusion_matrix": {
+            "labels": [
+              "NORMAL",
+              "HEAVY_RAIN"
+            ],
+            "matrix": [
+              [
+                29777,
+                219
+              ],
+              [
+                42,
+                0
+              ]
+            ]
+          },
+          "false_positives": 219,
+          "false_negatives": 42,
+          "true_positives": 0,
+          "true_negatives": 29777,
+          "heavy_rain_events": 42,
+          "normal_events": 29996,
+          "per_station": {
+            "USW00023174": {
+              "threshold": 0.733111,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "f2": 0.0,
+              "pr_auc": 0.002813793963529916,
+              "false_positive_rate": 0.007300973463128417,
+              "false_negative_rate": 1.0,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    29777,
+                    219
+                  ],
+                  [
+                    42,
+                    0
+                  ]
+                ]
+              },
+              "false_positives": 219,
+              "false_negatives": 42,
+              "true_positives": 0,
+              "true_negatives": 29777,
+              "heavy_rain_events": 42,
+              "normal_events": 29996
+            }
+          }
+        }
+      },
+      "USW00012960": {
+        "features": [
+          "station_id",
+          "prcp_mm",
+          "prcp_lag1_mm",
+          "prcp_rolling_3d_mean_mm",
+          "prcp_rolling_7d_mean_mm",
+          "prcp_rolling_14d_mean_mm",
+          "latitude",
+          "longitude",
+          "elevation_m",
+          "day_of_year_sin",
+          "day_of_year_cos",
+          "month_sin",
+          "month_cos"
+        ],
+        "partition_distributions": {
+          "train": {
+            "rows": 99145,
+            "heavy_rain_events": 579,
+            "normal_events": 98566,
+            "by_station": {
+              "USW00012839": {
+                "rows": 17261,
+                "heavy_rain_events": 242
+              },
+              "USW00023174": {
+                "rows": 18509,
+                "heavy_rain_events": 26
+              },
+              "USW00024233": {
+                "rows": 17261,
+                "heavy_rain_events": 18
+              },
+              "USW00094728": {
+                "rows": 46114,
+                "heavy_rain_events": 293
+              }
+            }
+          },
+          "validation": {
+            "rows": 46100,
+            "heavy_rain_events": 334,
+            "normal_events": 45766,
+            "by_station": {
+              "USW00012839": {
+                "rows": 11529,
+                "heavy_rain_events": 205
+              },
+              "USW00023174": {
+                "rows": 11529,
+                "heavy_rain_events": 16
+              },
+              "USW00024233": {
+                "rows": 11513,
+                "heavy_rain_events": 20
+              },
+              "USW00094728": {
+                "rows": 11529,
+                "heavy_rain_events": 93
+              }
+            }
+          },
+          "test": {
+            "rows": 20967,
+            "heavy_rain_events": 266,
+            "normal_events": 20701,
+            "by_station": {
+              "USW00012960": {
+                "rows": 20967,
+                "heavy_rain_events": 266
+              }
+            }
+          }
+        },
+        "model_comparison_validation": {
+          "logistic": {
+            "validation": {
+              "threshold": 0.763645,
+              "precision": 0.03867608776496839,
+              "recall": 0.31137724550898205,
+              "f1": 0.06880582203109493,
+              "f2": 0.12919254658385093,
+              "pr_auc": 0.037785041132874855,
+              "false_positive_rate": 0.056482978630424334,
+              "false_negative_rate": 0.688622754491018,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    43181,
+                    2585
+                  ],
+                  [
+                    230,
+                    104
+                  ]
+                ]
+              },
+              "false_positives": 2585,
+              "false_negatives": 230,
+              "true_positives": 104,
+              "true_negatives": 43181,
+              "heavy_rain_events": 334,
+              "normal_events": 45766
+            }
+          },
+          "hist_gradient": {
+            "validation": {
+              "threshold": 0.700788,
+              "precision": 0.036834094368340946,
+              "recall": 0.36227544910179643,
+              "f1": 0.0668693009118541,
+              "f2": 0.13092404241506167,
+              "pr_auc": 0.03480326946568537,
+              "false_positive_rate": 0.06913429183236464,
+              "false_negative_rate": 0.6377245508982036,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    42602,
+                    3164
+                  ],
+                  [
+                    213,
+                    121
+                  ]
+                ]
+              },
+              "false_positives": 3164,
+              "false_negatives": 213,
+              "true_positives": 121,
+              "true_negatives": 42602,
+              "heavy_rain_events": 334,
+              "normal_events": 45766
+            }
+          }
+        },
+        "selected_model": "hist_gradient",
+        "selected_threshold": 0.700788,
+        "test": {
+          "threshold": 0.700788,
+          "precision": 0.04338842975206612,
+          "recall": 0.15789473684210525,
+          "f1": 0.06807131280388978,
+          "f2": 0.10334645669291338,
+          "pr_auc": 0.03176779331768189,
+          "false_positive_rate": 0.04473213854403169,
+          "false_negative_rate": 0.8421052631578947,
+          "confusion_matrix": {
+            "labels": [
+              "NORMAL",
+              "HEAVY_RAIN"
+            ],
+            "matrix": [
+              [
+                19775,
+                926
+              ],
+              [
+                224,
+                42
+              ]
+            ]
+          },
+          "false_positives": 926,
+          "false_negatives": 224,
+          "true_positives": 42,
+          "true_negatives": 19775,
+          "heavy_rain_events": 266,
+          "normal_events": 20701,
+          "per_station": {
+            "USW00012960": {
+              "threshold": 0.700788,
+              "precision": 0.04338842975206612,
+              "recall": 0.15789473684210525,
+              "f1": 0.06807131280388978,
+              "f2": 0.10334645669291338,
+              "pr_auc": 0.03176779331768189,
+              "false_positive_rate": 0.04473213854403169,
+              "false_negative_rate": 0.8421052631578947,
+              "confusion_matrix": {
+                "labels": [
+                  "NORMAL",
+                  "HEAVY_RAIN"
+                ],
+                "matrix": [
+                  [
+                    19775,
+                    926
+                  ],
+                  [
+                    224,
+                    42
+                  ]
+                ]
+              },
+              "false_positives": 926,
+              "false_negatives": 224,
+              "true_positives": 42,
+              "true_negatives": 19775,
+              "heavy_rain_events": 266,
+              "normal_events": 20701
+            }
+          }
+        }
+      }
+    }
+  }
+}

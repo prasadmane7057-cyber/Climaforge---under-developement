@@ -473,3 +473,34 @@ export interface AuditEvent {
   description: string;
   details: Record<string, string>;
 }
+
+export interface FloodPredictionRequest {
+  prcp_mm: number;
+  tmax_c: number;
+  tmin_c: number;
+  snow_mm: number;
+  prcp_lag1_mm: number;
+  prcp_rolling_3d_mean_mm: number;
+  prcp_rolling_7d_mean_mm: number;
+  prcp_rolling_14d_mean_mm: number;
+}
+
+export interface FloodPredictionResponse {
+  predicted_risk_class: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  confidence: number;
+  class_probabilities: Record<string, number>;
+  model_version: string;
+}
+
+export interface ChatHistoryItem {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface ChatbotResponse {
+  answer: string;
+  source: 'LLM' | 'DETERMINISTIC_FALLBACK';
+  mode: 'grounded_llm' | 'deterministic_fallback';
+  scenario_id: string;
+  context_available: boolean;
+}

@@ -21,6 +21,7 @@ import type {
   AuditEvent,
   ScenarioAnalysisResponse,
   ScenarioZoneItem,
+  FloodPredictionResponse,
 } from '../types/api';
 import type { HealthCheckResult } from '../services/api';
 import type { NavigationTab } from './Sidebar';
@@ -38,6 +39,8 @@ interface OverviewTabProps {
   analysisError: string | null;
   onRunAnalysis: () => Promise<void>;
   onNavigateTab?: (tab: NavigationTab) => void;
+  mlPrediction: FloodPredictionResponse | null;
+  mlPredictionError: string | null;
 }
 
 export const OverviewTab: React.FC<OverviewTabProps> = ({
@@ -53,6 +56,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   analysisError,
   onRunAnalysis,
   onNavigateTab,
+  mlPrediction,
+  mlPredictionError,
 }) => {
   // Map Layer State
   const [activeMapLayer, setActiveMapLayer] = useState<'flood' | 'grid' | 'safe'>('flood');
@@ -292,6 +297,26 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             </div>
           )}
         </div>
+      </section>
+
+      <section className="alert-banner-info ml-flood-card" aria-live="polite">
+        <Activity size={18} className="text-cyan flex-shrink-0 mt-0.5" />
+        {mlPrediction ? (
+          <div>
+            <strong>ML FLOOD-RISK PREDICTOR</strong>
+            <span> &mdash; {mlPrediction.predicted_risk_class}</span>
+            <span> &mdash; Confidence {(mlPrediction.confidence * 100).toFixed(1)}%</span>
+            <span> &mdash; {mlPrediction.model_version}</span>
+          </div>
+        ) : mlPredictionError ? (
+          <div>
+            <strong>ML prediction unavailable:</strong> {mlPredictionError}
+          </div>
+        ) : (
+          <div>
+            <strong>ML prediction:</strong> Run flood analysis to generate a separate next-day rainfall-risk classification.
+          </div>
+        )}
       </section>
 
       {/* Analysis Error Alert */}

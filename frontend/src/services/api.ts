@@ -8,6 +8,10 @@ import type {
   ScenarioDetail,
   AuditEvent,
   ScenarioAnalysisResponse,
+  FloodPredictionRequest,
+  FloodPredictionResponse,
+  ChatHistoryItem,
+  ChatbotResponse,
 } from '../types/api';
 
 const DEFAULT_API_URL = 'http://localhost:8000';
@@ -200,5 +204,61 @@ export async function runScenarioAnalysis(scenarioId: string): Promise<ScenarioA
     throw new Error(`Analysis run failed: ${detailMsg}`);
   }
 
+  return response.json();
+}
+
+export async function predictFloodRisk(
+  payload: FloodPredictionRequest
+): Promise<FloodPredictionResponse> {
+  const baseUrl = getApiBaseUrl();
+  const response = await fetch(`${baseUrl}/api/ml/flood/predict`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    let detail = `HTTP ${response.status}: ${response.statusText}`;
+    try {
+      const body = await response.json();
+      if (body.detail) detail = typeof body.detail === 'string' ? body.detail : JSON.stringify(body.detail);
+    } catch {
+      // Preserve the status message when the error body is not JSON.
+    }
+    throw new Error(detail);
+  }
+  return response.json();
+}
+
+export async function askGroundedChatbot(
+  scenarioId: string,
+  question: string,
+  history: ChatHistoryItem[] = []
+): Promise<ChatbotResponse> {
+  const baseUrl = getApiBaseUrl();
+  const response = await fetch(`${baseUrl}/api/chatbot/message`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      scenario_id: scenarioId,
+      question,
+      history: history.slice(-12),
+    }),
+  });
+  if (!response.ok) {
+    let detail = `HTTP ${response.status}: ${response.statusText}`;
+    try {
+      const body = await response.json();
+      if (body.detail) detail = typeof body.detail === 'string' ? body.detail : JSON.stringify(body.detail);
+    } catch {
+      // Preserve the status message when validation details are unavailable.
+    }
+    throw new Error(detail);
+  }
   return response.json();
 }

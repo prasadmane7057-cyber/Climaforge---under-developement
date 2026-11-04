@@ -14,6 +14,7 @@ import {
   fetchAuditLogs,
   recordClientAuditEvent,
   runScenarioAnalysis,
+  predictFloodRisk,
   type HealthCheckResult,
 } from './services/api';
 import type {
@@ -21,6 +22,7 @@ import type {
   ScenarioDetail,
   AuditEvent,
   ScenarioAnalysisResponse,
+  FloodPredictionResponse,
 } from './types/api';
 import './App.css';
 
@@ -44,6 +46,8 @@ export const App: React.FC = () => {
   const [analysisResult, setAnalysisResult] = useState<ScenarioAnalysisResponse | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [mlPrediction, setMlPrediction] = useState<FloodPredictionResponse | null>(null);
+  const [mlPredictionError, setMlPredictionError] = useState<string | null>(null);
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -108,6 +112,29 @@ export const App: React.FC = () => {
     try {
       const res = await runScenarioAnalysis(selectedScenarioId);
       setAnalysisResult(res);
+      if (scenarioDetail?.zones?.length) {
+        const rainfall = scenarioDetail.zones.reduce(
+          (max, zone) => Math.max(max, zone.rainfall_mm),
+          0
+        );
+        try {
+          const ml = await predictFloodRisk({
+            prcp_mm: rainfall,
+            tmax_c: 20,
+            tmin_c: 10,
+            snow_mm: 0,
+            prcp_lag1_mm: rainfall * 0.8,
+            prcp_rolling_3d_mean_mm: rainfall,
+            prcp_rolling_7d_mean_mm: rainfall * 0.9,
+            prcp_rolling_14d_mean_mm: rainfall * 0.85,
+          });
+          setMlPrediction(ml);
+          setMlPredictionError(null);
+        } catch (err) {
+          setMlPrediction(null);
+          setMlPredictionError(err instanceof Error ? err.message : 'ML prediction failed');
+        }
+      }
       await loadAuditLogs();
     } catch (err) {
       setAnalysisError(
@@ -117,7 +144,7 @@ export const App: React.FC = () => {
     } finally {
       setIsAnalyzing(false);
     }
-  }, [isAnalyzing, selectedScenarioId, loadAuditLogs]);
+  }, [isAnalyzing, selectedScenarioId, loadAuditLogs, scenarioDetail]);
 
   // 4. Initial Bootstrap
   useEffect(() => {
@@ -206,6 +233,8 @@ export const App: React.FC = () => {
               analysisError={analysisError}
               onRunAnalysis={handleRunAnalysis}
               onNavigateTab={handleSelectTab}
+              mlPrediction={mlPrediction}
+              mlPredictionError={mlPredictionError}
             />
           )}
 
@@ -241,7 +270,11 @@ export const App: React.FC = () => {
           )}
 
           {activeTab === 'emergency-chatbot' && (
-            <EmergencyChatbotTab backendOnline={!!healthResult?.success} />
+            <EmergencyChatbotTab
+              backendOnline={!!healthResult?.success}
+              scenarioId={selectedScenarioId}
+              scenarioName={scenarioDetail?.name}
+            />
           )}
 
           {activeTab === 'audit-log' && (

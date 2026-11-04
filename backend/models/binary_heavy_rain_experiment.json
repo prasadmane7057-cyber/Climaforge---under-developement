@@ -1,0 +1,308 @@
+{
+  "experiment": "M11 rare heavy-rainfall binary detection",
+  "production_model_unchanged": true,
+  "target_definition": {
+    "NORMAL": "next-day precipitation <50 mm",
+    "HEAVY_RAIN": "next-day precipitation >=50 mm (existing HIGH threshold; includes HIGH and CRITICAL)"
+  },
+  "features": [
+    "prcp_mm",
+    "tmax_c",
+    "tmin_c",
+    "snow_mm",
+    "prcp_lag1_mm",
+    "prcp_rolling_3d_mean_mm",
+    "prcp_rolling_7d_mean_mm",
+    "prcp_rolling_14d_mean_mm"
+  ],
+  "partition_method": "Chronological 60% train / 20% validation / 20% test",
+  "partition_rows": {
+    "train": 34573,
+    "validation": 11524,
+    "test": 11525
+  },
+  "partition_distributions": {
+    "train_four_class": {
+      "counts": {
+        "LOW": 33537,
+        "MEDIUM": 846,
+        "HIGH": 173,
+        "CRITICAL": 17
+      },
+      "percentages": {
+        "LOW": 97.00344199230614,
+        "MEDIUM": 2.4469962109160326,
+        "HIGH": 0.5003904781187631,
+        "CRITICAL": 0.04917131865906922
+      },
+      "rows": 34573
+    },
+    "validation_four_class": {
+      "counts": {
+        "LOW": 11107,
+        "MEDIUM": 314,
+        "HIGH": 95,
+        "CRITICAL": 8
+      },
+      "percentages": {
+        "LOW": 96.38146476917737,
+        "MEDIUM": 2.7247483512669213,
+        "HIGH": 0.8243665393960431,
+        "CRITICAL": 0.06942034015966678
+      },
+      "rows": 11524
+    },
+    "test_four_class": {
+      "counts": {
+        "LOW": 11086,
+        "MEDIUM": 346,
+        "HIGH": 81,
+        "CRITICAL": 12
+      },
+      "percentages": {
+        "LOW": 96.19088937093275,
+        "MEDIUM": 3.002169197396963,
+        "HIGH": 0.7028199566160521,
+        "CRITICAL": 0.10412147505422993
+      },
+      "rows": 11525
+    },
+    "train_binary": {
+      "counts": {
+        "NORMAL": 34383,
+        "HEAVY_RAIN": 190
+      },
+      "percentages": {
+        "NORMAL": 99.45043820322216,
+        "HEAVY_RAIN": 0.5495617967778323
+      },
+      "rows": 34573
+    },
+    "validation_binary": {
+      "counts": {
+        "NORMAL": 11421,
+        "HEAVY_RAIN": 103
+      },
+      "percentages": {
+        "NORMAL": 99.10621312044428,
+        "HEAVY_RAIN": 0.8937868795557098
+      },
+      "rows": 11524
+    },
+    "test_binary": {
+      "counts": {
+        "NORMAL": 11432,
+        "HEAVY_RAIN": 93
+      },
+      "percentages": {
+        "NORMAL": 99.19305856832972,
+        "HEAVY_RAIN": 0.8069414316702821
+      },
+      "rows": 11525
+    }
+  },
+  "leakage_controls": {
+    "chronological": true,
+    "rolling_features_use_shifted_history": true,
+    "target_is_next_day": true,
+    "test_used_for_tuning": false,
+    "test_used_for_model_selection": false,
+    "synthetic_observations": false
+  },
+  "models_compared": [
+    "logistic_weighted",
+    "rf_balanced",
+    "rf_balanced_subsample",
+    "extra_trees_balanced"
+  ],
+  "model_comparison_validation": {
+    "logistic_weighted": {
+      "validation_pr_auc": 0.01550838239877272,
+      "validation_tuned": {
+        "threshold": 0.6205181307826957,
+        "precision": 0.016512549537648614,
+        "recall": 0.24271844660194175,
+        "f1": 0.030921459492888066,
+        "false_negative_rate": 0.7572815533980582,
+        "confusion_matrix": {
+          "labels": [
+            "NORMAL",
+            "HEAVY_RAIN"
+          ],
+          "matrix": [
+            [
+              9932,
+              1489
+            ],
+            [
+              78,
+              25
+            ]
+          ]
+        },
+        "true_negatives": 9932,
+        "false_positives": 1489,
+        "false_negatives": 78,
+        "true_positives": 25
+      }
+    },
+    "rf_balanced": {
+      "validation_pr_auc": 0.010550651397751607,
+      "validation_tuned": {
+        "threshold": 0.22870376761485878,
+        "precision": 0.012571086501047591,
+        "recall": 0.4077669902912621,
+        "f1": 0.024390243902439025,
+        "false_negative_rate": 0.5922330097087378,
+        "confusion_matrix": {
+          "labels": [
+            "NORMAL",
+            "HEAVY_RAIN"
+          ],
+          "matrix": [
+            [
+              8122,
+              3299
+            ],
+            [
+              61,
+              42
+            ]
+          ]
+        },
+        "true_negatives": 8122,
+        "false_positives": 3299,
+        "false_negatives": 61,
+        "true_positives": 42
+      }
+    },
+    "rf_balanced_subsample": {
+      "validation_pr_auc": 0.011297713789211154,
+      "validation_tuned": {
+        "threshold": 0.16570961356799824,
+        "precision": 0.014264264264264264,
+        "recall": 0.36893203883495146,
+        "f1": 0.027466570292735814,
+        "false_negative_rate": 0.6310679611650486,
+        "confusion_matrix": {
+          "labels": [
+            "NORMAL",
+            "HEAVY_RAIN"
+          ],
+          "matrix": [
+            [
+              8795,
+              2626
+            ],
+            [
+              65,
+              38
+            ]
+          ]
+        },
+        "true_negatives": 8795,
+        "false_positives": 2626,
+        "false_negatives": 65,
+        "true_positives": 38
+      }
+    },
+    "extra_trees_balanced": {
+      "validation_pr_auc": 0.01120853609378605,
+      "validation_tuned": {
+        "threshold": 0.4478394864971814,
+        "precision": 0.013267429760665974,
+        "recall": 0.49514563106796117,
+        "f1": 0.025842411958449454,
+        "false_negative_rate": 0.5048543689320388,
+        "confusion_matrix": {
+          "labels": [
+            "NORMAL",
+            "HEAVY_RAIN"
+          ],
+          "matrix": [
+            [
+              7628,
+              3793
+            ],
+            [
+              52,
+              51
+            ]
+          ]
+        },
+        "true_negatives": 7628,
+        "false_positives": 3793,
+        "false_negatives": 52,
+        "true_positives": 51
+      }
+    }
+  },
+  "selected_model": "extra_trees_balanced",
+  "selected_threshold": 0.4478394864971814,
+  "final_test_binary": {
+    "threshold": 0.4478394864971814,
+    "precision": 0.0104675505931612,
+    "recall": 0.4838709677419355,
+    "f1": 0.020491803278688523,
+    "false_negative_rate": 0.5161290322580645,
+    "confusion_matrix": {
+      "labels": [
+        "NORMAL",
+        "HEAVY_RAIN"
+      ],
+      "matrix": [
+        [
+          7178,
+          4254
+        ],
+        [
+          48,
+          45
+        ]
+      ]
+    },
+    "true_negatives": 7178,
+    "false_positives": 4254,
+    "false_negatives": 48,
+    "true_positives": 45,
+    "pr_auc": 0.012401419240130017
+  },
+  "test_event_counts": {
+    "normal": 11432,
+    "heavy_rain": 93,
+    "four_class_high_or_critical": 93
+  },
+  "four_class_vs_binary": {
+    "four_class_production_test_confusion_matrix": [
+      [
+        11086,
+        0,
+        0,
+        0
+      ],
+      [
+        346,
+        0,
+        0,
+        0
+      ],
+      [
+        81,
+        0,
+        0,
+        0
+      ],
+      [
+        12,
+        0,
+        0,
+        0
+      ]
+    ],
+    "four_class_production_high_recall": 0.0,
+    "four_class_production_critical_recall": 0.0,
+    "four_class_production_high_or_critical_recall": 0.0,
+    "binary_heavy_rain_recall": 0.4838709677419355,
+    "binary_heavy_rain_false_negative_rate": 0.5161290322580645
+  }
+}

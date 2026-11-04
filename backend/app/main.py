@@ -7,6 +7,8 @@ from app.config import settings
 from app.routers.health import router as health_router
 from app.routers.scenarios import router as scenarios_router
 from app.routers.audit import router as audit_router
+from app.routers.ml_prediction import router as ml_prediction_router
+from app.routers.chatbot import router as chatbot_router
 
 app = FastAPI(
     title=settings.app_name,
@@ -37,6 +39,10 @@ app.include_router(scenarios_router, prefix="/api")
 
 app.include_router(audit_router)
 app.include_router(audit_router, prefix="/api")
+app.include_router(ml_prediction_router)
+app.include_router(ml_prediction_router, prefix="/api")
+app.include_router(chatbot_router)
+app.include_router(chatbot_router, prefix="/api")
 
 
 @app.get("/", summary="Root Index")

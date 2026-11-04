@@ -1,0 +1,240 @@
+{
+  "dataset": "backend\\data\\noaa_expanded_rainfall.csv",
+  "source": "NOAA NCEI GHCN-Daily station CSV files",
+  "source_base_url": "https://www.ncei.noaa.gov/data/global-historical-climatology-network-daily/access",
+  "downloaded_this_run": {
+    "USW00012839": true,
+    "USW00024233": true,
+    "USW00094846": true,
+    "USW00023174": true,
+    "USW00012960": true
+  },
+  "preserved_original_dataset": "backend\\data\\nyc_central_park.csv",
+  "units": {
+    "prcp_mm": "PRCP tenths of mm divided by 10; missing remains null",
+    "latitude": "decimal degrees",
+    "longitude": "decimal degrees",
+    "elevation_m": "meters"
+  },
+  "missing_value_policy": "Missing PRCP values remain NaN and are marked by prcp_missing=true; they are never converted to zero.",
+  "stations": [
+    {
+      "station_id": "USW00094728",
+      "station_name": "NY CITY CENTRAL PARK, NY US",
+      "region": "Northeast US",
+      "latitude": 40.77898,
+      "longitude": -73.96925,
+      "date_start": "1869-01-01",
+      "date_end": "2026-10-28",
+      "record_years": 157.82,
+      "observation_rows": 57644,
+      "unique_observation_dates": 57644,
+      "missing_prcp_rows": 0,
+      "prcp_completeness_pct": 100.0,
+      "date_gap_count": 0,
+      "observed_heavy_ge50": 386,
+      "observed_critical_ge100": 37,
+      "next_day_heavy_ge50": 386,
+      "next_day_critical_ge100": 37,
+      "max_prcp_mm": 210.3,
+      "quality_passed": true
+    },
+    {
+      "station_id": "USW00012839",
+      "station_name": "MIAMI INTERNATIONAL AIRPORT, FL US",
+      "region": "Miami / Southeast US",
+      "latitude": 25.78805,
+      "longitude": -80.31694,
+      "date_start": "1948-01-01",
+      "date_end": "2026-10-28",
+      "record_years": 78.82,
+      "observation_rows": 28791,
+      "unique_observation_dates": 28791,
+      "missing_prcp_rows": 0,
+      "prcp_completeness_pct": 100.0,
+      "date_gap_count": 0,
+      "observed_heavy_ge50": 447,
+      "observed_critical_ge100": 71,
+      "next_day_heavy_ge50": 447,
+      "next_day_critical_ge100": 71,
+      "max_prcp_mm": 377.2,
+      "quality_passed": true
+    },
+    {
+      "station_id": "USW00024233",
+      "station_name": "SEATTLE TACOMA AIRPORT, WA US",
+      "region": "Seattle / Pacific Northwest US",
+      "latitude": 47.44467,
+      "longitude": -122.31442,
+      "date_start": "1948-01-01",
+      "date_end": "2026-10-28",
+      "record_years": 78.82,
+      "observation_rows": 28791,
+      "unique_observation_dates": 28791,
+      "missing_prcp_rows": 9,
+      "prcp_completeness_pct": 99.9687,
+      "date_gap_count": 0,
+      "observed_heavy_ge50": 38,
+      "observed_critical_ge100": 1,
+      "next_day_heavy_ge50": 38,
+      "next_day_critical_ge100": 1,
+      "max_prcp_mm": 127.5,
+      "quality_passed": true
+    },
+    {
+      "station_id": "USW00094846",
+      "station_name": "CHICAGO OHARE INTERNATIONAL AIRPORT, IL US",
+      "region": "Chicago / Great Lakes US",
+      "latitude": 41.96017,
+      "longitude": -87.93164,
+      "date_start": "1946-10-09",
+      "date_end": "2026-10-28",
+      "record_years": 80.05,
+      "observation_rows": 29236,
+      "unique_observation_dates": 29236,
+      "missing_prcp_rows": 4403,
+      "prcp_completeness_pct": 84.9398,
+      "date_gap_count": 4,
+      "observed_heavy_ge50": 90,
+      "observed_critical_ge100": 9,
+      "next_day_heavy_ge50": 90,
+      "next_day_critical_ge100": 9,
+      "max_prcp_mm": 174.2,
+      "quality_passed": false
+    },
+    {
+      "station_id": "USW00023174",
+      "station_name": "LOS ANGELES INTERNATIONAL AIRPORT, CA US",
+      "region": "Los Angeles / Southwest US",
+      "latitude": 33.93816,
+      "longitude": -118.3866,
+      "date_start": "1944-01-01",
+      "date_end": "2026-10-28",
+      "record_years": 82.82,
+      "observation_rows": 30252,
+      "unique_observation_dates": 30252,
+      "missing_prcp_rows": 213,
+      "prcp_completeness_pct": 99.2959,
+      "date_gap_count": 0,
+      "observed_heavy_ge50": 42,
+      "observed_critical_ge100": 3,
+      "next_day_heavy_ge50": 42,
+      "next_day_critical_ge100": 3,
+      "max_prcp_mm": 142.2,
+      "quality_passed": true
+    },
+    {
+      "station_id": "USW00012960",
+      "station_name": "HOUSTON INTERCONTINENTAL AIRPORT, TX US",
+      "region": "Houston / Gulf Coast US",
+      "latitude": 29.98438,
+      "longitude": -95.36072,
+      "date_start": "1969-06-01",
+      "date_end": "2026-10-27",
+      "record_years": 57.41,
+      "observation_rows": 20968,
+      "unique_observation_dates": 20968,
+      "missing_prcp_rows": 0,
+      "prcp_completeness_pct": 100.0,
+      "date_gap_count": 0,
+      "observed_heavy_ge50": 266,
+      "observed_critical_ge100": 47,
+      "next_day_heavy_ge50": 266,
+      "next_day_critical_ge100": 47,
+      "max_prcp_mm": 408.2,
+      "quality_passed": true
+    }
+  ],
+  "quality_thresholds": {
+    "record_years": 50,
+    "prcp_completeness_pct": 95,
+    "observation_rows": 18250
+  },
+  "stations_passing_quality": [
+    "USW00094728",
+    "USW00012839",
+    "USW00024233",
+    "USW00023174",
+    "USW00012960"
+  ],
+  "total_observations": 195682,
+  "unique_station_date_pairs": 195682,
+  "missing_prcp_observations": 4625,
+  "missing_prcp_pct": 2.3635,
+  "heavy_ge50_observations": 1269,
+  "critical_ge100_observations": 168,
+  "max_prcp_mm": 408.2,
+  "chronological_and_station_holdout": {
+    "train": {
+      "rows": 117409,
+      "date_start": "1869-01-01",
+      "date_end": "1991-02-09",
+      "stations": 6,
+      "missing_prcp": 4615,
+      "heavy_ge50": 672,
+      "critical_ge100": 77
+    },
+    "validation": {
+      "rows": 39136,
+      "date_start": "1991-02-09",
+      "date_end": "2008-12-18",
+      "stations": 6,
+      "missing_prcp": 4,
+      "heavy_ge50": 313,
+      "critical_ge100": 51
+    },
+    "test": {
+      "rows": 39137,
+      "date_start": "2008-12-19",
+      "date_end": "2026-10-28",
+      "stations": 6,
+      "missing_prcp": 6,
+      "heavy_ge50": 284,
+      "critical_ge100": 40
+    },
+    "station_holdout": {
+      "strategy": "Each station is tested after training/validation on all remaining stations; final station-held-out aggregate is not a pooled probability estimate.",
+      "splits": {
+        "USW00012839": {
+          "train_rows": 166891,
+          "test_rows": 28791,
+          "test_heavy_ge50": 447,
+          "test_missing_prcp": 0
+        },
+        "USW00012960": {
+          "train_rows": 174714,
+          "test_rows": 20968,
+          "test_heavy_ge50": 266,
+          "test_missing_prcp": 0
+        },
+        "USW00023174": {
+          "train_rows": 165430,
+          "test_rows": 30252,
+          "test_heavy_ge50": 42,
+          "test_missing_prcp": 213
+        },
+        "USW00024233": {
+          "train_rows": 166891,
+          "test_rows": 28791,
+          "test_heavy_ge50": 38,
+          "test_missing_prcp": 9
+        },
+        "USW00094728": {
+          "train_rows": 138038,
+          "test_rows": 57644,
+          "test_heavy_ge50": 386,
+          "test_missing_prcp": 0
+        },
+        "USW00094846": {
+          "train_rows": 166446,
+          "test_rows": 29236,
+          "test_heavy_ge50": 90,
+          "test_missing_prcp": 4403
+        }
+      }
+    }
+  },
+  "production_model_changed": false,
+  "binary_experimental_model_changed": false,
+  "quality_summary": "Suitable for controlled data-quality experiments only. No production retraining or deployment was performed."
+}

@@ -1,59 +1,93 @@
 import React, { useState } from 'react';
 import type { FormEvent } from 'react';
 import { AlertTriangle, Bot, Send, ShieldCheck, Wifi, WifiOff } from 'lucide-react';
+import { askGroundedChatbot } from '../services/api';
+import type { ChatHistoryItem } from '../types/api';
 
 interface EmergencyChatbotTabProps {
   backendOnline: boolean;
+  scenarioId: string;
+  scenarioName?: string;
 }
 
 interface ChatMessage {
   id: string;
   role: 'assistant' | 'user';
   text: string;
-  source: 'LOCAL MOCK';
+  source: 'DETERMINISTIC_FALLBACK' | 'LLM' | 'SYSTEM';
 }
 
 const suggestedPrompts = [
-  'Explain the purpose of this assistant',
-  'What information should I verify before acting?',
-  'Where can I review this scenario?',
+  'Explain the current risk assessment in simple language',
+  'Which locations are most affected?',
+  'What are the main consequences identified by the engine?',
+  'Why is this intervention recommended?',
+  'What happens if available resources are reduced?',
+  'What information is missing from this assessment?',
 ];
 
-export const EmergencyChatbotTab: React.FC<EmergencyChatbotTabProps> = ({ backendOnline }) => {
+export const EmergencyChatbotTab: React.FC<EmergencyChatbotTabProps> = ({
+  backendOnline,
+  scenarioId,
+  scenarioName,
+}) => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'welcome',
       role: 'assistant',
-      text: 'This is a local advisory interface for decision support. It does not access external intelligence, issue commands, or verify conditions. Review hazard analysis, model evidence, and local instructions through authorized channels before acting.',
-      source: 'LOCAL MOCK',
+      text: 'This grounded assistant answers from the selected CLIMAFORGE scenario and deterministic engine outputs. It does not confirm floods, verify live conditions, or record deployments.',
+      source: 'SYSTEM',
     },
   ]);
   const [draft, setDraft] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [currentMode, setCurrentMode] = useState<'grounded_llm' | 'deterministic_fallback' | null>(null);
 
-  const sendMessage = (text: string) => {
+  const sendMessage = async (text: string) => {
     const cleanText = text.trim();
-    if (!cleanText || isSending) return;
+    if (!cleanText || isSending || !backendOnline) return;
 
     setMessages((current) => [
       ...current,
-      { id: `user-${Date.now()}`, role: 'user', text: cleanText, source: 'LOCAL MOCK' },
+      { id: `user-${Date.now()}`, role: 'user', text: cleanText, source: 'SYSTEM' },
     ]);
     setDraft('');
     setIsSending(true);
+    setError(null);
 
-    window.setTimeout(() => {
+    const history: ChatHistoryItem[] = messages
+      .filter((message) => message.role === 'user' || message.role === 'assistant')
+      .filter((message) => message.id !== 'welcome')
+      .map((message) => ({ role: message.role, content: message.text }));
+
+    try {
+      const response = await askGroundedChatbot(scenarioId, cleanText, history);
       setMessages((current) => [
         ...current,
         {
           id: `assistant-${Date.now()}`,
           role: 'assistant',
-          source: 'LOCAL MOCK',
-          text: 'This mock response does not contain verified emergency instructions or external intelligence. Use the Risk Map, Consequence Graph, Interventions, and local authoritative guidance as supporting information. Any operational action requires human verification.',
+          source: response.source,
+          text: response.answer,
         },
       ]);
+      setCurrentMode(response.mode);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'The assistant request failed.';
+      setError(message);
+      setMessages((current) => [
+        ...current,
+        {
+          id: `assistant-error-${Date.now()}`,
+          role: 'assistant',
+          source: 'DETERMINISTIC_FALLBACK',
+          text: 'The grounded assistant request could not be completed. Backend context is unavailable for this response; no system values were inferred.',
+        },
+      ]);
+    } finally {
       setIsSending(false);
-    }, 350);
+    }
   };
 
   const handleSubmit = (event: FormEvent) => {
@@ -73,7 +107,7 @@ export const EmergencyChatbotTab: React.FC<EmergencyChatbotTabProps> = ({ backen
           {backendOnline ? <Wifi size={15} /> : <WifiOff size={15} />}
           <div>
             <strong>Backend {backendOnline ? 'connected' : 'disconnected'}</strong>
-            <span>Assistant response source: local mock</span>
+            <span>Scenario: {scenarioName || scenarioId}</span>
           </div>
         </div>
       </div>
@@ -100,7 +134,7 @@ export const EmergencyChatbotTab: React.FC<EmergencyChatbotTabProps> = ({ backen
           </div>
           <div className="m8-advisory-note">
             <AlertTriangle size={16} />
-            <span>No external AI service or live intelligence feed is connected.</span>
+            <span>{currentMode === 'grounded_llm' ? 'Grounded LLM mode is configured.' : 'Deterministic fallback is used unless a supported backend LLM is configured.'}</span>
           </div>
         </aside>
 
@@ -109,7 +143,7 @@ export const EmergencyChatbotTab: React.FC<EmergencyChatbotTabProps> = ({ backen
             <div className="m8-assistant-avatar"><Bot size={17} /></div>
             <div>
               <strong>Emergency Assistant</strong>
-              <span>Local advisory mock · Not a verified external service</span>
+              <span>{scenarioName || scenarioId} · Read-only context grounding</span>
             </div>
             <span className="m8-count-pill">{messages.length} message{messages.length === 1 ? '' : 's'}</span>
           </div>
@@ -132,15 +166,21 @@ export const EmergencyChatbotTab: React.FC<EmergencyChatbotTabProps> = ({ backen
             ))}
             {isSending && (
               <div className="m8-message-row assistant">
-                <div className="m8-message-meta"><span>Assistant</span><span className="m8-source-tag">LOCAL MOCK</span></div>
+                <div className="m8-message-meta"><span>Assistant</span><span className="m8-source-tag">PROCESSING</span></div>
                 <div className="m8-message-bubble m8-loading"><span /><span /><span /></div>
+              </div>
+            )}
+            {error && (
+              <div className="m8-advisory-note" role="alert">
+                <AlertTriangle size={16} />
+                <span>{error}</span>
               </div>
             )}
           </div>
 
           <div className="m8-suggestions">
             {suggestedPrompts.map((prompt) => (
-              <button key={prompt} type="button" onClick={() => sendMessage(prompt)} disabled={isSending}>
+              <button key={prompt} type="button" onClick={() => sendMessage(prompt)} disabled={isSending || !backendOnline}>
                 {prompt}
               </button>
             ))}
@@ -152,8 +192,9 @@ export const EmergencyChatbotTab: React.FC<EmergencyChatbotTabProps> = ({ backen
               onChange={(event) => setDraft(event.target.value)}
               placeholder="Enter a decision-support question..."
               aria-label="Emergency assistant message"
+              disabled={!backendOnline || isSending}
             />
-            <button type="submit" disabled={!draft.trim() || isSending} aria-label="Send message">
+            <button type="submit" disabled={!draft.trim() || isSending || !backendOnline} aria-label="Send message">
               <Send size={16} />
             </button>
           </form>

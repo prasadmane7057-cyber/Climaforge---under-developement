@@ -31,6 +31,11 @@ class Settings(BaseSettings):
     nugen_enabled: bool = False
     nugen_mock_mode: bool = True
     nugen_api_key: str = ""
+    chatbot_provider: str = "none"
+    chatbot_api_key: str = ""
+    chatbot_endpoint: str = ""
+    chatbot_model: str = ""
+    chatbot_timeout_seconds: float = 20.0
 
     @field_validator("cors_origins", mode="before")
     @classmethod
