@@ -24,6 +24,17 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     port: int = 8000
 
+    @field_validator("debug", mode="before")
+    @classmethod
+    def parse_debug_field(cls, v: object) -> bool:
+        if isinstance(v, str):
+            lower = v.strip().lower()
+            if lower in {"1", "true", "yes", "on", "enable", "enabled", "debug"}:
+                return True
+            if lower in {"0", "false", "no", "off", "disable", "disabled", "release", "prod", "production"}:
+                return False
+        return bool(v)
+
     # CORS origins allowed for frontend requests
     cors_origins: Union[List[str], str] = [
         "http://localhost:5173",
