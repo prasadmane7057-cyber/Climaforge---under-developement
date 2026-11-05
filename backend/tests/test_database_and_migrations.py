@@ -282,7 +282,7 @@ def test_alembic_migrations_full_lifecycle_on_temporary_database(alembic_config:
 
     token_cols = {col["name"] for col in inspector.get_columns("refresh_tokens")}
     expected_token_cols = {
-        "id", "user_id", "token_hash", "expires_at",
+        "id", "user_id", "family_id", "token_hash", "expires_at",
         "created_at", "revoked", "revoked_at",
     }
     assert expected_token_cols.issubset(token_cols)

@@ -29,6 +29,12 @@ class RefreshToken(Base):
         index=True,
         nullable=False,
     )
+    family_id: Mapped[str] = mapped_column(
+        String(36),
+        index=True,
+        nullable=False,
+        default=lambda: str(uuid.uuid4()),
+    )
     token_hash: Mapped[str] = mapped_column(
         String(255),
         unique=True,
@@ -63,6 +69,8 @@ class RefreshToken(Base):
     def __init__(self, **kwargs: object) -> None:
         if "id" not in kwargs:
             kwargs["id"] = str(uuid.uuid4())
+        if "family_id" not in kwargs:
+            kwargs["family_id"] = str(uuid.uuid4())
         if "revoked" not in kwargs:
             kwargs["revoked"] = False
         super().__init__(**kwargs)
