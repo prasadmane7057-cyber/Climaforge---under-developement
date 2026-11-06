@@ -26,6 +26,13 @@ def generate_raw_token() -> str:
     return secrets.token_urlsafe(32)
 
 
+def _ensure_utc(dt: datetime) -> datetime:
+    """Ensure datetime object is timezone-aware and normalized to UTC."""
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
 def hash_refresh_token(raw_token: str, pepper: str) -> str:
     """Compute a deterministic, keyed HMAC-SHA256 digest of a raw refresh token using pepper."""
     if not raw_token or not isinstance(raw_token, str):
@@ -93,6 +100,39 @@ class RefreshTokenService:
 
         return raw_token, token_record
 
+    def validate_refresh_token(
+        self,
+        session: Session,
+        raw_token: str,
+    ) -> RefreshToken:
+        """Validate the supplied refresh token's presence, expiry, and revocation status without rotating it.
+
+        Raises:
+            InvalidRefreshTokenError: If token does not exist or input is invalid.
+            TokenRevokedError: If the token has been revoked.
+            TokenExpiredRefreshError: If the token has expired.
+        """
+        token_hash = hash_refresh_token(raw_token, self.pepper)
+        token = session.execute(
+            select(RefreshToken).where(RefreshToken.token_hash == token_hash)
+        ).scalar_one_or_none()
+
+        if token is None:
+            raise InvalidRefreshTokenError("Refresh token not found or invalid")
+
+        now = datetime.now(timezone.utc)
+        if token.revoked:
+            raise TokenRevokedError("Refresh token has been revoked")
+
+        if _ensure_utc(token.expires_at) < now:
+            token.revoked = True
+            token.revoked_at = now
+            session.commit()
+            session.expire_all()
+            raise TokenExpiredRefreshError("Refresh token has expired")
+
+        return token
+
     def rotate_refresh_token(
         self,
         session: Session,
@@ -102,10 +142,10 @@ class RefreshTokenService:
 
         Replay Detection:
         If a token that was already revoked is replayed, the entire token family/session
-        is immediately revoked to protect against session hijacking.
+        is immediately committed as revoked to protect against session hijacking.
 
         Concurrency Protection:
-        Atomic state transition prevents concurrent requests from double-rotating the same token.
+        Atomic conditional state transition prevents concurrent requests from double-rotating the same token.
         """
         token_hash = hash_refresh_token(raw_token, self.pepper)
 
@@ -132,15 +172,17 @@ class RefreshTokenService:
                     .values(revoked=True, revoked_at=now)
                 )
                 session.commit()
+                session.expire_all()
                 raise TokenReusedError(
                     "Refresh token reuse detected; entire token family has been revoked"
                 )
 
-            # 3. Check for expired token
-            if token.expires_at < now:
+            # 3. Check for expired token (safely handling SQLite timezone-naive datetimes)
+            if _ensure_utc(token.expires_at) < now:
                 token.revoked = True
                 token.revoked_at = now
                 session.commit()
+                session.expire_all()
                 raise TokenExpiredRefreshError("Refresh token has expired")
 
             # 4. Atomic rotation check: conditional update ensures no other thread consumed it
@@ -164,6 +206,7 @@ class RefreshTokenService:
                     .values(revoked=True, revoked_at=now)
                 )
                 session.commit()
+                session.expire_all()
                 raise TokenReusedError("Concurrent rotation conflict; token already consumed")
 
             # 5. Issue new token in the same session family
@@ -174,6 +217,8 @@ class RefreshTokenService:
             )
 
             session.commit()
+            session.expire_all()
+            session.refresh(new_token)
             return new_raw_token, new_token
 
         except (
@@ -182,7 +227,7 @@ class RefreshTokenService:
             TokenExpiredRefreshError,
             TokenRevokedError,
         ):
-            # Re-raise known domain exceptions directly
+            # Re-raise known domain exceptions directly without rollback
             raise
         except Exception as exc:
             session.rollback()
@@ -202,10 +247,14 @@ class RefreshTokenService:
             .values(revoked=True, revoked_at=now)
         )
         session.commit()
+        session.expire_all()
         return result.rowcount > 0
 
     def revoke_session(self, session: Session, family_id: str) -> int:
         """Revoke all tokens associated with a session family (e.g., logout from device)."""
+        if not family_id or not str(family_id).strip():
+            raise ValueError("family_id must be a non-empty string")
+
         now = datetime.now(timezone.utc)
         result = session.execute(
             update(RefreshToken)
@@ -216,10 +265,14 @@ class RefreshTokenService:
             .values(revoked=True, revoked_at=now)
         )
         session.commit()
+        session.expire_all()
         return int(result.rowcount)
 
     def revoke_all_user_tokens(self, session: Session, user_id: str) -> int:
         """Revoke all active refresh tokens for a user (e.g., global logout or password reset)."""
+        if not user_id or not str(user_id).strip():
+            raise ValueError("user_id must be a non-empty string")
+
         now = datetime.now(timezone.utc)
         result = session.execute(
             update(RefreshToken)
@@ -230,9 +283,9 @@ class RefreshTokenService:
             .values(revoked=True, revoked_at=now)
         )
         session.commit()
+        session.expire_all()
         return int(result.rowcount)
 
 
 # Default service instance
 refresh_token_service = RefreshTokenService()
-

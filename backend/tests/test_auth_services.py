@@ -26,6 +26,7 @@ from app.security import (
     TokenExpiredRefreshError,
     TokenPayload,
     TokenReusedError,
+    TokenRevokedError,
     generate_raw_token,
     hash_refresh_token,
 )
@@ -267,6 +268,52 @@ class TestJWTService:
         with pytest.raises(InvalidTokenError):
             jwt_svc.verify_access_token(token)
 
+    def test_extra_claims_preservation(self, test_settings: Settings):
+        jwt_svc = JWTService(test_settings)
+        token = jwt_svc.create_access_token(
+            user_id="user-123",
+            email="user@test.org",
+            role="analyst",
+            extra_claims={"department": "hydrology", "sub": "attacker-override"},
+        )
+        payload = jwt_svc.verify_access_token(token)
+        # Protected claim must NOT be overridden by extra_claims
+        assert payload.sub == "user-123"
+        # Custom claims preserved
+        assert payload.extra_claims.get("department") == "hydrology"
+
+    def test_empty_or_whitespace_claims_rejected(self, test_settings: Settings):
+        # Empty subject claim must be rejected
+        payload_empty_sub = {
+            "sub": "   ",
+            "iss": test_settings.jwt_issuer,
+            "aud": test_settings.jwt_audience,
+            "iat": int(datetime.now(timezone.utc).timestamp()),
+            "exp": int((datetime.now(timezone.utc) + timedelta(minutes=10)).timestamp()),
+            "jti": str(uuid.uuid4()),
+        }
+        token_empty_sub = jwt.encode(
+            payload_empty_sub, test_settings.jwt_signing_key, algorithm=test_settings.jwt_algorithm
+        )
+        jwt_svc = JWTService(test_settings)
+        with pytest.raises(InvalidTokenError, match="Subject claim .* must be a non-empty string"):
+            jwt_svc.verify_access_token(token_empty_sub)
+
+        # Empty jti claim must be rejected
+        payload_empty_jti = {
+            "sub": "valid-user",
+            "iss": test_settings.jwt_issuer,
+            "aud": test_settings.jwt_audience,
+            "iat": int(datetime.now(timezone.utc).timestamp()),
+            "exp": int((datetime.now(timezone.utc) + timedelta(minutes=10)).timestamp()),
+            "jti": "",
+        }
+        token_empty_jti = jwt.encode(
+            payload_empty_jti, test_settings.jwt_signing_key, algorithm=test_settings.jwt_algorithm
+        )
+        with pytest.raises(InvalidTokenError, match="Token ID claim .* must be a non-empty string"):
+            jwt_svc.verify_access_token(token_empty_jti)
+
 
 # ============================================================================
 # 3. REFRESH TOKEN GENERATION, ROTATION, AND REVOCATION TESTS
@@ -350,6 +397,28 @@ class TestRefreshTokenService:
         # 4. New token is active
         assert record_2.revoked is False
 
+    def test_rotate_refresh_token_cross_session_naive_sqlite(
+        self, test_settings: Settings, sample_user: User
+    ):
+        """Ensure SQLite timezone-naive datetime returned from DB does not fail datetime comparison."""
+        engine = create_db_engine(test_settings.database_url)
+        session_factory = get_session_factory(engine)
+
+        # Issue in session 1
+        with session_factory() as s1:
+            service = RefreshTokenService(test_settings)
+            raw_token, _ = service.create_refresh_token(s1, sample_user.id)
+            s1.commit()
+
+        # Rotate in session 2 (database row loaded anew as naive datetime)
+        with session_factory() as s2:
+            service = RefreshTokenService(test_settings)
+            new_raw, new_rec = service.rotate_refresh_token(s2, raw_token)
+            assert new_raw is not None
+            assert new_rec.revoked is False
+
+        engine.dispose()
+
     def test_unknown_refresh_token_rejection(
         self, test_settings: Settings, test_db_session: Session
     ):
@@ -373,6 +442,52 @@ class TestRefreshTokenService:
         # Check it is marked revoked
         test_db_session.refresh(record)
         assert record.revoked is True
+
+    def test_revoked_token_rejection(
+        self, test_settings: Settings, test_db_session: Session, sample_user: User
+    ):
+        """Verify that an explicitly revoked token is rejected and triggers token-family reuse protection."""
+        service = RefreshTokenService(test_settings)
+        raw_token, record = service.create_refresh_token(test_db_session, sample_user.id)
+        test_db_session.commit()
+
+        # Explicitly revoke
+        revoked = service.revoke_refresh_token(test_db_session, raw_token)
+        assert revoked is True
+
+        # Attempting to rotate revoked token must be rejected with TokenReusedError
+        with pytest.raises(TokenReusedError, match="reuse detected; entire token family has been revoked"):
+            service.rotate_refresh_token(test_db_session, raw_token)
+
+    def test_validate_refresh_token_lifecycle(
+        self, test_settings: Settings, test_db_session: Session, sample_user: User
+    ):
+        """Verify validate_refresh_token behavior for active, expired, revoked, and unknown tokens."""
+        service = RefreshTokenService(test_settings)
+
+        # 1. Unknown token
+        with pytest.raises(InvalidRefreshTokenError, match="not found or invalid"):
+            service.validate_refresh_token(test_db_session, "non_existent_token_value")
+
+        # 2. Valid active token
+        raw_token, rec = service.create_refresh_token(test_db_session, sample_user.id)
+        test_db_session.commit()
+        validated = service.validate_refresh_token(test_db_session, raw_token)
+        assert validated.id == rec.id
+        assert validated.revoked is False
+
+        # 3. Revoked token
+        service.revoke_refresh_token(test_db_session, raw_token)
+        with pytest.raises(TokenRevokedError, match="Refresh token has been revoked"):
+            service.validate_refresh_token(test_db_session, raw_token)
+
+        # 4. Expired token
+        raw_exp, rec_exp = service.create_refresh_token(test_db_session, sample_user.id)
+        rec_exp.expires_at = datetime.now(timezone.utc) - timedelta(hours=1)
+        test_db_session.commit()
+
+        with pytest.raises(TokenExpiredRefreshError, match="Refresh token has expired"):
+            service.validate_refresh_token(test_db_session, raw_exp)
 
     def test_replay_detection_revokes_entire_token_family(
         self, test_settings: Settings, test_db_session: Session, sample_user: User
@@ -408,6 +523,102 @@ class TestRefreshTokenService:
         # Attempting to use T3 now also fails because it was revoked
         with pytest.raises(TokenReusedError):
             service.rotate_refresh_token(test_db_session, raw_t3)
+
+    def test_replay_detection_does_not_affect_other_sessions(
+        self, test_settings: Settings, test_db_session: Session, sample_user: User
+    ):
+        """Confirm replay detection revokes ONLY the compromised family, preserving separate user sessions."""
+        service = RefreshTokenService(test_settings)
+
+        # Session A (e.g. Work laptop)
+        raw_a1, rec_a1 = service.create_refresh_token(test_db_session, sample_user.id)
+        test_db_session.commit()
+        raw_a2, rec_a2 = service.rotate_refresh_token(test_db_session, raw_a1)
+
+        # Session B (e.g. Phone)
+        raw_b1, rec_b1 = service.create_refresh_token(test_db_session, sample_user.id)
+        test_db_session.commit()
+        raw_b2, rec_b2 = service.rotate_refresh_token(test_db_session, raw_b1)
+
+        # Replay old token raw_a1 from Session A
+        with pytest.raises(TokenReusedError):
+            service.rotate_refresh_token(test_db_session, raw_a1)
+
+        # Session A should be revoked
+        test_db_session.refresh(rec_a2)
+        assert rec_a2.revoked is True
+
+        # Session B must remain completely intact and active
+        test_db_session.refresh(rec_b2)
+        assert rec_b2.revoked is False
+
+        # Session B can still rotate normally
+        raw_b3, rec_b3 = service.rotate_refresh_token(test_db_session, raw_b2)
+        assert raw_b3 is not None
+        assert rec_b3.revoked is False
+
+    def test_caller_rollback_after_replay_preserves_revocation(
+        self, test_settings: Settings, sample_user: User
+    ):
+        """Confirm that if a caller catches TokenReusedError and rolls back, DB family revocation is NOT rolled back."""
+        engine = create_db_engine(test_settings.database_url)
+        session_factory = get_session_factory(engine)
+
+        with session_factory() as session:
+            service = RefreshTokenService(test_settings)
+            raw_t1, rec_t1 = service.create_refresh_token(session, sample_user.id)
+            session.commit()
+
+            raw_t2, rec_t2 = service.rotate_refresh_token(session, raw_t1)
+            t2_id = rec_t2.id
+
+            # Attacker replays raw_t1
+            try:
+                service.rotate_refresh_token(session, raw_t1)
+            except TokenReusedError:
+                # Simulating external caller doing a rollback on caught exception
+                session.rollback()
+
+        # Open completely fresh session to inspect disk state
+        with session_factory() as session:
+            persisted_t2 = session.get(RefreshToken, t2_id)
+            assert persisted_t2 is not None
+            # Revocation must remain persistent in the database!
+            assert persisted_t2.revoked is True
+
+        engine.dispose()
+
+    def test_session_revocation_cannot_be_bypassed_by_rotation(
+        self, test_settings: Settings, test_db_session: Session, sample_user: User
+    ):
+        """Verify that once a session is revoked, no token in that family can be rotated."""
+        service = RefreshTokenService(test_settings)
+        raw_token, record = service.create_refresh_token(test_db_session, sample_user.id)
+        test_db_session.commit()
+
+        # Revoke entire session
+        count = service.revoke_session(test_db_session, record.family_id)
+        assert count == 1
+
+        # Attempt to rotate should fail with TokenReusedError
+        with pytest.raises(TokenReusedError):
+            service.rotate_refresh_token(test_db_session, raw_token)
+
+    def test_revoke_session_validation(self, test_settings: Settings, test_db_session: Session):
+        service = RefreshTokenService(test_settings)
+        with pytest.raises(ValueError, match="family_id must be a non-empty string"):
+            service.revoke_session(test_db_session, "")
+
+        with pytest.raises(ValueError, match="family_id must be a non-empty string"):
+            service.revoke_session(test_db_session, "   ")
+
+    def test_revoke_all_user_tokens_validation(self, test_settings: Settings, test_db_session: Session):
+        service = RefreshTokenService(test_settings)
+        with pytest.raises(ValueError, match="user_id must be a non-empty string"):
+            service.revoke_all_user_tokens(test_db_session, "")
+
+        with pytest.raises(ValueError, match="user_id must be a non-empty string"):
+            service.revoke_all_user_tokens(test_db_session, "   ")
 
     def test_concurrent_rotation_protection(
         self, test_settings: Settings, test_db_session: Session, sample_user: User

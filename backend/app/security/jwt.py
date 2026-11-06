@@ -1,6 +1,6 @@
 """JWT access token generation and cryptographic verification service."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Any
 import uuid
@@ -31,19 +31,31 @@ class TokenPayload:
     exp: int
     iat: int
     jti: str
+    extra_claims: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "TokenPayload":
         """Instantiate TokenPayload from verified claims dict."""
+        sub_val = str(data.get("sub", "")).strip()
+        if not sub_val:
+            raise InvalidTokenError("Subject claim (sub) must be a non-empty string")
+
+        jti_val = str(data.get("jti", "")).strip()
+        if not jti_val:
+            raise InvalidTokenError("Token ID claim (jti) must be a non-empty string")
+
+        standard = {"sub", "email", "role", "iss", "aud", "exp", "iat", "jti"}
+        extra = {k: v for k, v in data.items() if k not in standard}
         return cls(
-            sub=str(data["sub"]),
+            sub=sub_val,
             email=str(data.get("email", "")),
             role=str(data.get("role", "operator")),
             iss=str(data["iss"]),
             aud=str(data["aud"]),
             exp=int(data["exp"]),
             iat=int(data["iat"]),
-            jti=str(data["jti"]),
+            jti=jti_val,
+            extra_claims=extra,
         )
 
 
@@ -153,10 +165,11 @@ class JWTService:
         ) as exc:
             # Never leak signing key or sensitive backend stack
             raise InvalidTokenError("Invalid token or claims") from exc
+        except (InvalidTokenError, TokenExpiredError):
+            raise
         except Exception as exc:
             raise InvalidTokenError("Malformed token") from exc
 
 
 # Default service instance
 jwt_service = JWTService()
-
