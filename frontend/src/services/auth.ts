@@ -310,3 +310,17 @@ export async function restoreSession(): Promise<UserProfile | null> {
     return null;
   }
 }
+
+// Attach dev helpers in development mode for genuine browser E2E inspection
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
+  (window as unknown as Record<string, unknown>).__CLIMAFORGE_AUTH__ = {
+    getAccessToken,
+    setAccessToken,
+    clearAccessToken,
+    refreshAccessToken,
+    loginUser,
+    logoutUser,
+    fetchCurrentUser,
+    restoreSession,
+  };
+}

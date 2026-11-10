@@ -209,20 +209,86 @@ export function recordLoginCrossTab(): void {
 }
 
 // ============================================================================
-// Web Locks Exclusive Execution Wrapper
+// Web Locks Exclusive Execution Wrapper (with Fail-Closed Fallback)
 // ============================================================================
+
+export const FALLBACK_LOCK_KEY = 'climaforge_refresh_lock_fallback';
+export const FALLBACK_LOCK_TIMEOUT_MS = 5000;
 
 /**
  * Execute an asynchronous action within the exclusive Web Lock 'climaforge_refresh_lock'.
  * Ensures only one browser tab can execute the refresh operation at any instant.
- * Automatically falls back to direct execution if Web Locks are unsupported.
+ *
+ * If Web Locks API is unavailable:
+ * - Coordinates via localStorage timestamp mutex (storing only numeric epoch, zero secrets).
+ * - Where safe cross-tab coordination cannot be guaranteed, fails closed rather than
+ *   permitting uncontrolled concurrent refresh requests that would trigger backend replay detection.
  */
 export async function executeWithRefreshLock<T>(action: () => Promise<T>): Promise<T> {
-  if (!isWebLocksSupported()) {
-    return action();
+  if (isWebLocksSupported()) {
+    return navigator.locks.request(REFRESH_LOCK_NAME, async () => {
+      return action();
+    });
   }
 
-  return navigator.locks.request(REFRESH_LOCK_NAME, async () => {
-    return action();
-  });
+  // Cross-tab fallback lock using localStorage monotonic timestamp (no secrets stored)
+  if (typeof localStorage !== 'undefined') {
+    const startTime = Date.now();
+    let acquired = false;
+
+    while (Date.now() - startTime < FALLBACK_LOCK_TIMEOUT_MS) {
+      const existing = localStorage.getItem(FALLBACK_LOCK_KEY);
+      const existingTime = existing ? parseInt(existing, 10) : 0;
+      const isExpired = !existingTime || Date.now() - existingTime > FALLBACK_LOCK_TIMEOUT_MS;
+
+      if (!existing || isExpired) {
+        localStorage.setItem(FALLBACK_LOCK_KEY, String(Date.now()));
+        acquired = true;
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+
+    if (!acquired) {
+      // Fail closed: Refuse to permit uncontrolled concurrent refresh calls
+      throw new Error('Cross-tab refresh lock acquisition timed out: failing closed to prevent replay collision');
+    }
+
+    try {
+      return await action();
+    } finally {
+      try {
+        localStorage.removeItem(FALLBACK_LOCK_KEY);
+      } catch {
+        // Ignore cleanup failure
+      }
+    }
+  }
+
+  // If running in an environment without Web Locks or localStorage where cross-tab
+  // coordination cannot be safely guaranteed:
+  // Fail closed if window is defined (multi-tab browser context)
+  if (typeof window !== 'undefined') {
+    throw new Error('Safe cross-tab refresh coordination unavailable: failing closed to prevent replay collision');
+  }
+
+  return action();
+}
+
+// Attach dev helpers in development mode for genuine browser E2E inspection
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
+  (window as unknown as Record<string, unknown>).__CLIMAFORGE_AUTHSYNC__ = {
+    isWebLocksSupported,
+    isBroadcastChannelSupported,
+    executeWithRefreshLock,
+    clearCrossTabState,
+    broadcastAuthEvent,
+    onAuthBroadcast,
+    recordRefreshCompletedCrossTab,
+    recordLogoutCrossTab,
+    recordSessionExpiredCrossTab,
+    recordLoginCrossTab,
+    isRecentRefreshCompleted,
+    isRecentCrossTabSessionExpired,
+  };
 }
