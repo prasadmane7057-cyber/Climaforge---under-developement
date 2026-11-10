@@ -4504,3 +4504,740 @@ body {
   justify-content: center;
   gap: 12px;
 }
+
+/* ==========================================================================
+   Milestone 6: Emergency Alerts & Safe Evacuation Routing Styles
+   ========================================================================== */
+
+.m6-emergency-suite {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.m6-alerts-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+}
+
+.m6-section-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.m6-section-title-row h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.m6-alerts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 10px;
+}
+
+.m6-alert-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border-left: 4px solid var(--border-subtle);
+  background: var(--surface-muted);
+  font-size: 0.75rem;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.m6-alert-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.m6-alert-card.critical {
+  border-left-color: #dc2626;
+  background: #fef2f2;
+}
+
+.m6-alert-card.high {
+  border-left-color: #d97706;
+  background: #fffbeb;
+}
+
+.m6-alert-card.medium {
+  border-left-color: #f59e0b;
+  background: #fefce8;
+}
+
+.m6-alert-card.low {
+  border-left-color: #16a34a;
+  background: #f0fdf4;
+}
+
+.m6-alert-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.m6-severity-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.m6-severity-badge.critical {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.m6-severity-badge.high {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.m6-severity-badge.medium {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.m6-severity-badge.low {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.m6-alert-score {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.m6-alert-headline {
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.m6-alert-cause {
+  color: var(--text-secondary);
+  font-size: 0.68rem;
+}
+
+.m6-alert-action {
+  color: var(--text-primary);
+  line-height: 1.35;
+  margin-top: 2px;
+}
+
+.m6-alert-disclaimer {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 0.58rem;
+  font-weight: 600;
+  color: #94a3b8;
+  letter-spacing: 0.03em;
+}
+
+/* Evacuation Route Planner */
+.m6-routing-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+}
+
+.m6-routing-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+@media (max-width: 768px) {
+  .m6-routing-controls {
+    grid-template-columns: 1fr;
+  }
+}
+
+.m6-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.m6-field-group label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.m6-field-select {
+  padding: 7px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 0.75rem;
+}
+
+.m6-plan-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 6px;
+  background: var(--brand-forest);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s ease;
+  white-space: nowrap;
+}
+
+.m6-plan-button:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.m6-plan-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Route Result View */
+.m6-route-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 6px;
+  background: var(--surface-muted);
+  border: 1px solid var(--border-subtle);
+}
+
+.m6-route-card.safe {
+  border-left: 4px solid #16a34a;
+}
+
+.m6-route-card.blocked {
+  border-left: 4px solid #dc2626;
+  background: #fef2f2;
+}
+
+.m6-route-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.m6-route-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.m6-route-status-pill.safe {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #86efac;
+}
+
+.m6-route-status-pill.blocked {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+.m6-route-metrics {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+.m6-route-metrics strong {
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+}
+
+.m6-avoidance-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+  font-size: 0.72rem;
+}
+
+.m6-blocked-instructions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 6px;
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  color: #991b1b;
+  font-size: 0.75rem;
+}
+
+.m6-step-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.m6-step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.72rem;
+  color: var(--text-primary);
+  line-height: 1.35;
+}
+
+.m6-step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--brand-forest-light);
+  color: var(--brand-forest);
+  font-size: 0.6rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.m6-simulation-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/* Map Evacuation Corridor Overlay */
+.m6-map-corridor-active {
+  stroke: #16a34a;
+  stroke-width: 3.5;
+  stroke-dasharray: 4 2;
+  animation: corridorPulse 2s infinite linear;
+}
+
+@keyframes corridorPulse {
+  to {
+    stroke-dashoffset: -12;
+  }
+}
+
+/* ============================================================================
+   Milestone 7: Panic Phase, Offline Cache & Client SOS Outbox
+   ============================================================================ */
+
+.m7-panic-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.m7-panic-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid #dc2626;
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.m7-panic-toggle-btn.active {
+  background: #dc2626;
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(220, 38, 38, 0.4);
+}
+
+.m7-offline-warning-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #fffbeb;
+  border: 1px solid #f59e0b;
+  color: #92400e;
+  font-size: 0.75rem;
+  margin-bottom: 14px;
+}
+
+.m7-storage-warning {
+  background: #fee2e2;
+  border-color: #ef4444;
+  color: #991b1b;
+}
+
+.m7-panic-suite {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.m7-panic-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .m7-panic-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.m7-sos-card {
+  background: var(--bg-card);
+  border: 2px solid #ef4444;
+  border-radius: 8px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.m7-sos-card h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: #dc2626;
+  margin: 0;
+}
+
+.m7-sos-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.m7-form-row {
+  display: flex;
+  gap: 10px;
+}
+
+.m7-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.m7-form-group label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.m7-form-input,
+.m7-form-select,
+.m7-form-textarea {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  font-family: inherit;
+}
+
+.m7-form-textarea {
+  min-height: 55px;
+  resize: vertical;
+}
+
+.m7-sos-submit-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: none;
+  background: #dc2626;
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.m7-sos-submit-btn:hover {
+  background: #b91c1c;
+}
+
+.m7-outbox-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.m7-outbox-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.m7-outbox-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.m7-outbox-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.m7-sync-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 5px;
+  border: 1px solid var(--brand-forest);
+  background: var(--brand-forest-light);
+  color: var(--brand-forest);
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.m7-sync-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.m7-clear-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 5px;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
+.m7-outbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.m7-outbox-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  font-size: 0.72rem;
+}
+
+.m7-outbox-item-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.m7-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.m7-status-pill.not-sent {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.m7-status-pill.acknowledged {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
+}
+
+.m7-sync-msg {
+  padding: 6px 10px;
+  border-radius: 5px;
+  font-size: 0.7rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+}
+
+.m7-sync-msg.error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+/* ==========================================================================
+   MapTiler Basemap Cartographic Integration Styles
+   ========================================================================== */
+.maptiler-basemap-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  opacity: 0.58;
+  transition: opacity 0.3s ease;
+  z-index: 1;
+}
+
+.maptiler-attribution-link {
+  color: #64748b;
+  text-decoration: none;
+  font-size: 0.68rem;
+  transition: color 0.15s ease;
+}
+
+.maptiler-attribution-link:hover {
+  color: #0284c7;
+  text-decoration: underline;
+}
+
+.maptiler-badge-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(16, 185, 129, 0.15);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.maptiler-badge-fallback {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(148, 163, 184, 0.15);
+  color: #64748b;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.maptiler-style-selector {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: #ffffff;
+  border: 1px solid var(--border-color, #cbd5e1);
+  border-radius: 6px;
+  padding: 2px;
+}
+
+.maptiler-style-btn {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 3px 7px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.maptiler-style-btn.active {
+  background: var(--brand-forest, #0d9488);
+  color: #ffffff;
+}
+
+
+

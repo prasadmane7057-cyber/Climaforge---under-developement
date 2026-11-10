@@ -36,6 +36,8 @@ __pycache__/
 
 # Environment configurations (keep secrets out of git)
 .env
+.env.*
+!.env.example
 .env.local
 .env.development.local
 .env.test.local

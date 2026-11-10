@@ -41,15 +41,32 @@ class Settings(BaseSettings):
         "http://127.0.0.1:5173",
     ]
 
-    # Advisory AI Layer configuration (strictly advisory, never authoritative)
+    # Advisory AI Layer & Nugen AI Conversational Assistant
     nugen_enabled: bool = False
     nugen_mock_mode: bool = True
+    nugen_provider: str = "mock"
     nugen_api_key: str = ""
+    nugen_api_url: str = "https://api.nugen.in/api/v3/inference/chat/completions"
+    nugen_endpoint: str = "https://api.nugen.in/api/v3/inference/chat/completions"
+    nugen_model: str = "Qwen/Qwen2.5-0.5B-Instruct"
+    nugen_max_tokens: int = 500
+    nugen_temperature: float = 0.1
+    nugen_stream: bool = True
+    nugen_timeout_seconds: float = 25.0
     chatbot_provider: str = "none"
     chatbot_api_key: str = ""
     chatbot_endpoint: str = ""
     chatbot_model: str = ""
-    chatbot_timeout_seconds: float = 20.0
+    chatbot_timeout_seconds: float = 25.0
+
+    # Real-Time Environmental Intelligence & IMD Configuration
+    open_meteo_base_url: str = "https://api.open-meteo.com/v1"
+    open_meteo_timeout_seconds: float = 10.0
+    weather_cache_ttl_seconds: int = 600
+    imd_enabled: bool = False
+    imd_api_base_url: str = "https://api.imd.gov.in/public"
+    imd_api_key: str = ""
+    imd_timeout_seconds: float = 10.0
 
     auth_mode: Literal["strict"] = "strict"
     jwt_signing_key: str | None = None
@@ -75,6 +92,21 @@ class Settings(BaseSettings):
         elif isinstance(v, list):
             return [str(item) for item in v]
         return ["http://localhost:5173", "http://127.0.0.1:5173"]
+
+    @property
+    def effective_nugen_url(self) -> str:
+        return self.nugen_api_url or self.nugen_endpoint or "https://api.nugen.in/api/v3/inference/chat/completions"
+
+    @property
+    def is_nugen_configured(self) -> bool:
+        key = (self.nugen_api_key or self.chatbot_api_key or "").strip()
+        return bool(
+            self.nugen_enabled
+            and not self.nugen_mock_mode
+            and key
+            and not key.lower().startswith("replace")
+            and not key.lower().startswith("your")
+        )
 
     def validate_auth_configuration(self) -> None:
         """Validate all settings required before strict authentication can run."""

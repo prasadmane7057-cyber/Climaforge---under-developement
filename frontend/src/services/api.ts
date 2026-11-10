@@ -12,6 +12,12 @@ import type {
   FloodPredictionResponse,
   ChatHistoryItem,
   ChatbotResponse,
+  NugenGatewayStatus,
+  ScenarioAlertsResponse,
+  ScenarioSafePointsResponse,
+  EvacuationRouteResponse,
+  IncidentRecord,
+  IncidentSyncResponse,
 } from '../types/api';
 import {
   getAccessToken,
@@ -317,6 +323,289 @@ export async function askGroundedChatbot(
       if (body.detail) detail = typeof body.detail === 'string' ? body.detail : JSON.stringify(body.detail);
     } catch {
       // Preserve the status message when validation details are unavailable.
+    }
+    throw new Error(detail);
+  }
+  return response.json();
+}
+
+export interface StreamChatCallbacks {
+  onToken: (token: string) => void;
+  onDone?: (metadata: { fullText: string; model?: string; provider?: string; source?: string }) => void;
+  onError?: (error: Error) => void;
+}
+
+/**
+ * Stream real-time conversational tokens from the CLIMAFORGE Nugen AI Assistant.
+ */
+export async function streamChatbotMessage(
+  scenarioId: string,
+  question: string,
+  history: ChatHistoryItem[] = [],
+  callbacks: StreamChatCallbacks,
+  signal?: AbortSignal
+): Promise<void> {
+  const baseUrl = getApiBaseUrl();
+  const response = await authenticatedFetch(
+    `${baseUrl}/api/chatbot/stream`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'text/event-stream',
+      },
+      body: JSON.stringify({
+        scenario_id: scenarioId,
+        question,
+        history: history.slice(-12),
+      }),
+      signal,
+    },
+    true
+  );
+
+  if (!response.ok) {
+    let detail = `HTTP ${response.status}: ${response.statusText}`;
+    try {
+      const body = await response.json();
+      if (body.detail) detail = typeof body.detail === 'string' ? body.detail : JSON.stringify(body.detail);
+    } catch {
+      // Preserve the status message
+    }
+    const err = new Error(detail);
+    callbacks.onError?.(err);
+    throw err;
+  }
+
+  if (!response.body) {
+    const err = new Error('ReadableStream not supported or empty response body');
+    callbacks.onError?.(err);
+    throw err;
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder('utf-8');
+  let accumulatedText = '';
+  let buffer = '';
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const rawLine of lines) {
+        const line = rawLine.trim();
+        if (!line || line.startsWith(':')) continue;
+
+        if (line.startsWith('data: ')) {
+          const jsonStr = line.slice(6).trim();
+          try {
+            const data = JSON.parse(jsonStr);
+            if (data.token) {
+              accumulatedText += data.token;
+              callbacks.onToken(data.token);
+            }
+            if (data.done) {
+              callbacks.onDone?.({
+                fullText: data.full_text || accumulatedText,
+                model: data.model,
+                provider: data.provider,
+                source: data.source,
+              });
+            }
+            if (data.error) {
+              const err = new Error(data.error);
+              callbacks.onError?.(err);
+              throw err;
+            }
+          } catch (pErr) {
+            if (pErr instanceof Error && pErr.message !== 'Unexpected token') {
+              // Ignore partial chunk parse errors
+            }
+          }
+        }
+      }
+    }
+  } catch (err) {
+    if (signal?.aborted) return;
+    callbacks.onError?.(err instanceof Error ? err : new Error(String(err)));
+    throw err;
+  }
+}
+
+export async function fetchNugenStatus(): Promise<NugenGatewayStatus> {
+  const baseUrl = getApiBaseUrl();
+  const response = await authenticatedFetch(`${baseUrl}/api/chatbot/status`, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+    },
+  });
+  if (!response.ok) {
+    let detail = `HTTP ${response.status}: ${response.statusText}`;
+    try {
+      const body = await response.json();
+      if (body.detail) detail = typeof body.detail === 'string' ? body.detail : JSON.stringify(body.detail);
+    } catch {
+      // Ignore
+    }
+    throw new Error(detail);
+  }
+  return response.json();
+}
+
+export async function fetchScenarioAlerts(scenarioId: string): Promise<ScenarioAlertsResponse> {
+  const baseUrl = getApiBaseUrl();
+  const response = await authenticatedFetch(`${baseUrl}/api/scenarios/${encodeURIComponent(scenarioId)}/alerts`, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+    },
+  });
+  if (!response.ok) {
+    let detail = `HTTP ${response.status}: ${response.statusText}`;
+    try {
+      const body = await response.json();
+      if (body.detail) detail = typeof body.detail === 'string' ? body.detail : JSON.stringify(body.detail);
+    } catch {
+      // Ignore
+    }
+    throw new Error(detail);
+  }
+  return response.json();
+}
+
+export async function fetchScenarioSafePoints(scenarioId: string): Promise<ScenarioSafePointsResponse> {
+  const baseUrl = getApiBaseUrl();
+  const response = await authenticatedFetch(`${baseUrl}/api/scenarios/${encodeURIComponent(scenarioId)}/safe-points`, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+    },
+  });
+  if (!response.ok) {
+    let detail = `HTTP ${response.status}: ${response.statusText}`;
+    try {
+      const body = await response.json();
+      if (body.detail) detail = typeof body.detail === 'string' ? body.detail : JSON.stringify(body.detail);
+    } catch {
+      // Ignore
+    }
+    throw new Error(detail);
+  }
+  return response.json();
+}
+
+export async function requestEvacuationRoute(
+  scenarioId: string,
+  originZoneId: string,
+  destinationSafePointId?: string,
+  avoidWatchNodes: boolean = false,
+): Promise<EvacuationRouteResponse> {
+  const baseUrl = getApiBaseUrl();
+  const response = await authenticatedFetch(`${baseUrl}/api/scenarios/${encodeURIComponent(scenarioId)}/evacuation-route`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({
+      origin_zone_id: originZoneId,
+      destination_safe_point_id: destinationSafePointId || null,
+      avoid_watch_nodes: avoidWatchNodes,
+    }),
+  });
+  if (!response.ok) {
+    let detail = `HTTP ${response.status}: ${response.statusText}`;
+    try {
+      const body = await response.json();
+      if (body.detail) detail = typeof body.detail === 'string' ? body.detail : JSON.stringify(body.detail);
+    } catch {
+      // Ignore
+    }
+    throw new Error(detail);
+  }
+  return response.json();
+}
+
+export async function fetchEvacuationRouteStatus(
+  scenarioId: string,
+  routeId: string,
+): Promise<EvacuationRouteResponse> {
+  const baseUrl = getApiBaseUrl();
+  const response = await authenticatedFetch(
+    `${baseUrl}/api/scenarios/${encodeURIComponent(scenarioId)}/evacuation-route/${encodeURIComponent(routeId)}`,
+    {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+      },
+    },
+  );
+  if (!response.ok) {
+    let detail = `HTTP ${response.status}: ${response.statusText}`;
+    try {
+      const body = await response.json();
+      if (body.detail) detail = typeof body.detail === 'string' ? body.detail : JSON.stringify(body.detail);
+    } catch {
+      // Ignore
+    }
+    throw new Error(detail);
+  }
+  return response.json();
+}
+
+export async function syncIncidents(
+  scenarioId: string,
+  incidents: IncidentRecord[],
+): Promise<IncidentSyncResponse> {
+  const baseUrl = getApiBaseUrl();
+  const response = await authenticatedFetch(
+    `${baseUrl}/api/scenarios/${encodeURIComponent(scenarioId)}/incidents/sync`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({ incidents }),
+    },
+  );
+  if (!response.ok) {
+    let detail = `HTTP ${response.status}: ${response.statusText}`;
+    try {
+      const body = await response.json();
+      if (body.detail) detail = typeof body.detail === 'string' ? body.detail : JSON.stringify(body.detail);
+    } catch {
+      // Ignore
+    }
+    throw new Error(detail);
+  }
+  return response.json();
+}
+
+export async function fetchScenarioIncidents(scenarioId: string): Promise<IncidentRecord[]> {
+  const baseUrl = getApiBaseUrl();
+  const response = await authenticatedFetch(
+    `${baseUrl}/api/scenarios/${encodeURIComponent(scenarioId)}/incidents`,
+    {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+      },
+    },
+  );
+  if (!response.ok) {
+    let detail = `HTTP ${response.status}: ${response.statusText}`;
+    try {
+      const body = await response.json();
+      if (body.detail) detail = typeof body.detail === 'string' ? body.detail : JSON.stringify(body.detail);
+    } catch {
+      // Ignore
     }
     throw new Error(detail);
   }

@@ -209,20 +209,23 @@ export function recordLoginCrossTab(): void {
 }
 
 // ============================================================================
-// Web Locks Exclusive Execution Wrapper (with Fail-Closed Fallback)
+// Web Locks Exclusive Execution Wrapper (Fail-Closed Architecture)
 // ============================================================================
-
-export const FALLBACK_LOCK_KEY = 'climaforge_refresh_lock_fallback';
-export const FALLBACK_LOCK_TIMEOUT_MS = 5000;
 
 /**
  * Execute an asynchronous action within the exclusive Web Lock 'climaforge_refresh_lock'.
  * Ensures only one browser tab can execute the refresh operation at any instant.
  *
- * If Web Locks API is unavailable:
- * - Coordinates via localStorage timestamp mutex (storing only numeric epoch, zero secrets).
- * - Where safe cross-tab coordination cannot be guaranteed, fails closed rather than
- *   permitting uncontrolled concurrent refresh requests that would trigger backend replay detection.
+ * Security Architecture (Fail-Closed):
+ * - In modern browsers, `navigator.locks` provides atomic FIFO mutual exclusion across tabs.
+ * - Ad-hoc software mutexes over `localStorage` (such as timestamp flags) are fundamentally unsafe:
+ *   they suffer from non-atomic read-then-write (TOCTOU) races where competing tabs both
+ *   believe they own the lock, leading to concurrent refresh requests that trigger backend
+ *   replay detection and revoke the user's session family.
+ * - Therefore, when Web Locks API is unavailable in a browser environment, this function
+ *   fails closed by rejecting rather than permitting uncoordinated concurrent refresh requests.
+ * - Single-tab concurrency within each tab remains protected by `activeRefreshPromise`.
+ * - Backend refresh-token replay detection remains 100% authoritative and unweakened.
  */
 export async function executeWithRefreshLock<T>(action: () => Promise<T>): Promise<T> {
   if (isWebLocksSupported()) {
@@ -231,47 +234,13 @@ export async function executeWithRefreshLock<T>(action: () => Promise<T>): Promi
     });
   }
 
-  // Cross-tab fallback lock using localStorage monotonic timestamp (no secrets stored)
-  if (typeof localStorage !== 'undefined') {
-    const startTime = Date.now();
-    let acquired = false;
-
-    while (Date.now() - startTime < FALLBACK_LOCK_TIMEOUT_MS) {
-      const existing = localStorage.getItem(FALLBACK_LOCK_KEY);
-      const existingTime = existing ? parseInt(existing, 10) : 0;
-      const isExpired = !existingTime || Date.now() - existingTime > FALLBACK_LOCK_TIMEOUT_MS;
-
-      if (!existing || isExpired) {
-        localStorage.setItem(FALLBACK_LOCK_KEY, String(Date.now()));
-        acquired = true;
-        break;
-      }
-      await new Promise((resolve) => setTimeout(resolve, 25));
-    }
-
-    if (!acquired) {
-      // Fail closed: Refuse to permit uncontrolled concurrent refresh calls
-      throw new Error('Cross-tab refresh lock acquisition timed out: failing closed to prevent replay collision');
-    }
-
-    try {
-      return await action();
-    } finally {
-      try {
-        localStorage.removeItem(FALLBACK_LOCK_KEY);
-      } catch {
-        // Ignore cleanup failure
-      }
-    }
-  }
-
-  // If running in an environment without Web Locks or localStorage where cross-tab
-  // coordination cannot be safely guaranteed:
-  // Fail closed if window is defined (multi-tab browser context)
+  // Fail closed in multi-tab browser environments when Web Locks API is unavailable:
+  // Refuse to permit uncoordinated concurrent refresh requests across tabs.
   if (typeof window !== 'undefined') {
-    throw new Error('Safe cross-tab refresh coordination unavailable: failing closed to prevent replay collision');
+    throw new Error('Web Locks API unavailable: safe cross-tab refresh coordination cannot be guaranteed');
   }
 
+  // Non-browser / SSR environment where multi-tab concurrency does not exist
   return action();
 }
 

@@ -312,10 +312,19 @@ const DecisionCardPanel: React.FC<{ card: DecisionCardResult }> = ({ card }) => 
               <div className="m7-run-info"><span>Run ID</span><code>{card.run_id}</code></div>
             </div>
             <div className="m7-nugen-block">
-              <span className="m7-panel-label">Nugen advisory</span>
-              <strong>{card.ai_status === 'MOCK' ? 'Mock advisory only' : card.ai_status}</strong>
+              <div className="m7-nugen-header">
+                <span className="m7-panel-label">Nugen advisory</span>
+                <span className={`m7-advisory-badge m7-advisory-${card.ai_status.toLowerCase()}`}>
+                  {card.ai_status === 'MOCK' ? 'ADVISORY: MOCK' : card.ai_status === 'LIVE' ? 'ADVISORY: LIVE' : card.ai_status === 'FALLBACK' ? 'ADVISORY: FALLBACK' : `ADVISORY: ${card.ai_status}`}
+                </span>
+              </div>
               <p>{card.nugen_recommendation ? `Nugen recommendation: ${card.nugen_recommendation}` : 'No Nugen recommendation returned.'}</p>
-              {card.nugen_agreement !== null && <span>{card.nugen_agreement ? 'Matches deterministic model selection' : 'Differs from deterministic model selection'}</span>}
+              {card.nugen_agreement !== null && (
+                <span className={`m7-agreement-tag ${card.nugen_agreement ? 'agrees' : 'differs'}`}>
+                  {card.nugen_agreement ? '✓ Matches deterministic model selection' : '⚠ Differs from deterministic model selection'}
+                </span>
+              )}
+              <small className="m7-advisory-disclaimer">Non-authoritative AI advice. Algorithms 0–13 remain authoritative.</small>
             </div>
             <div className="m7-decision-reason"><span className="m7-panel-label">Decision rationale</span><p>{card.reason}</p></div>
           </div>
@@ -326,7 +335,16 @@ const DecisionCardPanel: React.FC<{ card: DecisionCardResult }> = ({ card }) => 
           <p>{card.reason}</p>
           {!!card.blockers.length && <div><span className="m7-panel-label">Blockers</span><ul>{card.blockers.map((blocker, index) => <li key={`${blocker}-${index}`}>{blocker}</li>)}</ul></div>}
           {!!card.rejected_candidates.length && <div><span className="m7-panel-label">Rejected candidates</span>{card.rejected_candidates.map((candidate) => <article key={candidate.intervention_id}><strong>{candidate.intervention_id}</strong><ul>{candidate.blockers.map((blocker, index) => <li key={`${blocker}-${index}`}>{blocker}</li>)}</ul></article>)}</div>}
-          <div className="m7-nugen-block"><span className="m7-panel-label">Nugen advisory</span><strong>{card.ai_status === 'MOCK' ? 'Mock advisory only' : card.ai_status}</strong><p>{card.nugen_recommendation || 'No Nugen recommendation returned.'}</p></div>
+          <div className="m7-nugen-block">
+            <div className="m7-nugen-header">
+              <span className="m7-panel-label">Nugen advisory</span>
+              <span className={`m7-advisory-badge m7-advisory-${card.ai_status.toLowerCase()}`}>
+                {card.ai_status === 'MOCK' ? 'ADVISORY: MOCK' : `ADVISORY: ${card.ai_status}`}
+              </span>
+            </div>
+            <p>{card.nugen_recommendation || 'No Nugen recommendation returned.'}</p>
+            <small className="m7-advisory-disclaimer">Non-authoritative AI advice. Algorithms 0–13 remain authoritative.</small>
+          </div>
         </div>
       )}
     </section>

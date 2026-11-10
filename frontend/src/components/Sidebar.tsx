@@ -11,6 +11,7 @@ import {
   LogIn,
   LogOut,
   Lock,
+  CloudRain,
 } from 'lucide-react';
 import type { UserProfile, PermissionName, RoleName } from '../types/auth';
 import { userHasPermission, normalizeRole } from '../types/auth';
@@ -21,6 +22,7 @@ export type NavigationTab =
   | 'consequence-graph'
   | 'interventions'
   | 'emergency-chatbot'
+  | 'environmental'
   | 'audit-log';
 
 interface NavItemConfig {
@@ -69,6 +71,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: <MessageSquare size={17} />,
       badge: 'M5',
       requiredPermission: 'chatbot.ask',
+    },
+    {
+      id: 'environmental',
+      label: 'Environmental Intel',
+      icon: <CloudRain size={17} />,
+      badge: 'LIVE',
+      requiredPermission: 'scenario.read',
     },
     {
       id: 'audit-log',

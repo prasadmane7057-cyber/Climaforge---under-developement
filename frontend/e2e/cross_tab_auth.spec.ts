@@ -409,9 +409,9 @@ test.describe('M16A.7 Real-Browser Multi-Tab E2E Verification (Playwright + Chro
   });
 
   // --------------------------------------------------------------------------
-  // Scenario 11: Fail-Closed Behavior for Unsupported APIs
+  // Scenario 11: Fail-Closed Behavior for Unsupported APIs (No localStorage Mutex)
   // --------------------------------------------------------------------------
-  test('11. Fails closed safely when safe cross-tab coordination cannot be guaranteed', async () => {
+  test('11. Fails closed safely when Web Locks API is unavailable without using unsafe localStorage fallback', async () => {
     const result = await page1.evaluate(async () => {
       // Temporarily simulate missing navigator.locks
       const originalLocks = navigator.locks;
@@ -421,25 +421,30 @@ test.describe('M16A.7 Real-Browser Multi-Tab E2E Verification (Playwright + Chro
       });
 
       try {
-        // If localStorage is also unavailable, fail closed
-        const originalLocalStorage = window.localStorage;
-        Object.defineProperty(window, 'localStorage', {
-          value: undefined,
-          configurable: true,
-        });
+        // Track whether localStorage.setItem was invoked
+        let localStorageTouched = false;
+        const origSetItem = localStorage.setItem.bind(localStorage);
+        localStorage.setItem = (key: string, val: string) => {
+          if (key.includes('lock')) localStorageTouched = true;
+          return origSetItem(key, val);
+        };
 
         try {
           await window.__CLIMAFORGE_AUTHSYNC__.executeWithRefreshLock(async () => {
             return 'should-not-run';
           });
-          return { failedClosed: false, message: '' };
+          return { failedClosed: false, message: '', localStorageTouched };
         } catch (err) {
-          return { failedClosed: true, message: (err as Error).message };
+          // Also verify refreshAccessToken catches and returns null safely
+          const refreshTokenResult = await window.__CLIMAFORGE_AUTH__.refreshAccessToken();
+          return {
+            failedClosed: true,
+            message: (err as Error).message,
+            refreshTokenResult,
+            localStorageTouched,
+          };
         } finally {
-          Object.defineProperty(window, 'localStorage', {
-            value: originalLocalStorage,
-            configurable: true,
-          });
+          localStorage.setItem = origSetItem;
         }
       } finally {
         Object.defineProperty(navigator, 'locks', {
@@ -449,7 +454,14 @@ test.describe('M16A.7 Real-Browser Multi-Tab E2E Verification (Playwright + Chro
       }
     });
 
+    // 1. Must fail closed immediately
     expect(result.failedClosed).toBe(true);
-    expect(result.message).toContain('Safe cross-tab refresh coordination unavailable: failing closed');
+    expect(result.message).toContain('Web Locks API unavailable: safe cross-tab refresh coordination cannot be guaranteed');
+
+    // 2. refreshAccessToken returns null without throwing or leaking credentials
+    expect(result.refreshTokenResult).toBeNull();
+
+    // 3. Unsafe localStorage software mutex is NEVER used
+    expect(result.localStorageTouched).toBe(false);
   });
 });

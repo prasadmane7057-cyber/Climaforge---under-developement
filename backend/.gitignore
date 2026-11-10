@@ -1,0 +1,10 @@
+# Environment configurations (keep secrets out of git)
+.env
+.env.*
+!.env.example
+
+# Bytecode & Caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+

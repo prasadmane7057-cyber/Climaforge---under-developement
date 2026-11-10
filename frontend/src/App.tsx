@@ -6,6 +6,7 @@ import { RiskMapTab } from './components/RiskMapTab';
 import { ConsequenceGraphTab } from './components/ConsequenceGraphTab';
 import { InterventionsTab } from './components/InterventionsTab';
 import { EmergencyChatbotTab } from './components/EmergencyChatbotTab';
+import { EnvironmentalTab } from './components/EnvironmentalTab';
 import { AuditLogTab } from './components/AuditLogTab';
 import { LoginModal } from './components/LoginModal';
 import { UnauthorizedView } from './components/UnauthorizedView';
@@ -38,6 +39,7 @@ const TAB_PERMISSIONS: Record<NavigationTab, PermissionName> = {
   'consequence-graph': 'scenario.read',
   interventions: 'scenario.read',
   'emergency-chatbot': 'chatbot.ask',
+  environmental: 'scenario.read',
   'audit-log': 'audit.read',
 };
 
@@ -356,6 +358,10 @@ export const OperationsDashboard: React.FC = () => {
                   scenarioId={selectedScenarioId}
                   scenarioName={scenarioDetail?.name}
                 />
+              )}
+
+              {activeTab === 'environmental' && (
+                <EnvironmentalTab />
               )}
 
               {activeTab === 'audit-log' && (

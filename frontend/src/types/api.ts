@@ -310,7 +310,8 @@ export interface DecisionCardResult {
   } | null;
   modelled_relative_change: number | null;
   quality_flags: string[];
-  ai_status: 'MOCK' | 'FALLBACK' | string;
+  ai_status: 'MOCK' | 'FALLBACK' | 'LIVE' | 'DISABLED' | string;
+  nugen_advisory_status?: AdvisoryStatus | string;
   nugen_recommendation: string | null;
   nugen_agreement: boolean | null;
   human_review_warning: string;
@@ -499,8 +500,143 @@ export interface ChatHistoryItem {
 
 export interface ChatbotResponse {
   answer: string;
-  source: 'LLM' | 'DETERMINISTIC_FALLBACK';
-  mode: 'grounded_llm' | 'deterministic_fallback';
+  source: 'LLM' | 'DETERMINISTIC_FALLBACK' | 'MOCK';
+  mode: 'grounded_llm' | 'deterministic_fallback' | 'mock_advisory';
   scenario_id: string;
   context_available: boolean;
+  is_advisory?: boolean;
+  advisory_status?: string | null;
 }
+
+export interface NugenGatewayStatus {
+  enabled: boolean;
+  mock_mode: boolean;
+  provider: string;
+  active_mode: string;
+  timeout_seconds: number;
+  advisory_label: string;
+  authority: string;
+  disclaimer: string;
+}
+
+export interface CitizenAlertItem {
+  alert_id: string;
+  scenario_id: string;
+  zone_id: string;
+  zone_name: string;
+  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'DATA_INSUFFICIENT';
+  risk_score: number;
+  dominant_cause: string;
+  headline: string;
+  description: string;
+  action_recommendation: string;
+  is_simulated: boolean;
+  is_live_confirmed: boolean;
+  disclaimer: string;
+  generated_at: string;
+}
+
+export interface ScenarioAlertsResponse {
+  scenario_id: string;
+  scenario_name: string;
+  generated_at: string;
+  alerts: CitizenAlertItem[];
+  highest_severity: string;
+  affected_zone_count: number;
+  is_simulated: boolean;
+  is_live_confirmed: boolean;
+  disclaimer: string;
+}
+
+export interface RouteWaypointItem {
+  node_id: string;
+  name: string;
+  zone_id: string;
+  node_type: string;
+  safety_status: 'SAFE' | 'WATCH' | 'FAILING';
+  cumulative_distance_km: number;
+  cumulative_time_minutes: number;
+  instruction: string;
+}
+
+export interface HazardAvoidanceDetail {
+  node_id: string;
+  name: string;
+  reason: string;
+  risk_probability: number;
+  failure_state: 'FAILING' | 'WATCH' | 'SAFE';
+}
+
+export interface EvacuationRouteRequest {
+  origin_zone_id: string;
+  destination_safe_point_id?: string;
+  avoid_watch_nodes?: boolean;
+}
+
+export interface EvacuationRouteResponse {
+  route_id: string;
+  scenario_id: string;
+  origin_zone_id: string;
+  origin_zone_name: string;
+  destination_safe_point_id?: string;
+  destination_safe_point_name?: string;
+  destination_zone_id?: string;
+  status: 'CONFIRMED_SAFE' | 'BLOCKED' | 'NO_PATH_AVAILABLE' | 'ERROR';
+  path_node_ids: string[];
+  waypoints: RouteWaypointItem[];
+  distance_km?: number | null;
+  estimated_transit_minutes?: number | null;
+  avoided_hazard_nodes: string[];
+  avoided_node_details: HazardAvoidanceDetail[];
+  step_by_step_instructions: string[];
+  is_live_confirmed: boolean;
+  is_simulated: boolean;
+  disclaimer: string;
+  generated_at: string;
+  error_message?: string | null;
+}
+
+export interface SafePointDetail {
+  safe_point_id: string;
+  name: string;
+  zone_id: string;
+  capacity_persons: number;
+  elevation_m: number;
+  label: string;
+  is_operational: boolean;
+  amenities: string[];
+}
+
+export interface ScenarioSafePointsResponse {
+  scenario_id: string;
+  safe_points: SafePointDetail[];
+  total_shelter_capacity: number;
+  highest_elevation_m: number;
+}
+
+// Milestone 7: Offline Resilience and SOS Outbox Contracts
+export interface IncidentSyncRequest {
+  incidents: IncidentRecord[];
+}
+
+export interface IncidentSyncResponse {
+  scenario_id: string;
+  synced_incident_ids: string[];
+  duplicate_incident_ids: string[];
+  rejected_incident_ids: string[];
+  total_received: number;
+  total_synced: number;
+  total_duplicates: number;
+  acknowledged_at: string;
+  status: 'ACKNOWLEDGED' | 'PARTIAL_SUCCESS' | 'NO_NEW_DATA';
+  disclaimer: string;
+}
+
+export interface CachedScenarioBundle {
+  scenario_id: string;
+  scenario_name: string;
+  cached_at: string;
+  alerts: CitizenAlertItem[];
+  safe_points: SafePointDetail[];
+}
+

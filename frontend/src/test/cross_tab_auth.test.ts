@@ -223,7 +223,7 @@ describe('M16A.7 Cross-Tab Authentication Coordination & Session Hardening', () 
       expect(typeof isBroadcastChannelSupported()).toBe('boolean');
     });
 
-    it('falls back seamlessly when Web Locks API is unsupported', async () => {
+    it('fails closed safely when Web Locks API is unsupported in a browser environment', async () => {
       const originalLocks = navigator.locks;
       Object.defineProperty(navigator, 'locks', {
         value: undefined,
@@ -233,15 +233,41 @@ describe('M16A.7 Cross-Tab Authentication Coordination & Session Hardening', () 
       try {
         expect(isWebLocksSupported()).toBe(false);
 
-        let actionExecuted = false;
-        const result = await executeWithRefreshLock(async () => {
-          actionExecuted = true;
-          return 'direct-execution-fallback';
-        });
+        // 1. Direct executeWithRefreshLock call must reject and fail closed
+        await expect(
+          executeWithRefreshLock(async () => 'uncontrolled-concurrent-action')
+        ).rejects.toThrow('Web Locks API unavailable: safe cross-tab refresh coordination cannot be guaranteed');
 
-        expect(actionExecuted).toBe(true);
-        expect(result).toBe('direct-execution-fallback');
+        // 2. refreshAccessToken catches the failure, clears in-memory state, and returns null safely
+        const token = await refreshAccessToken();
+        expect(token).toBeNull();
+        expect(getAccessToken()).toBeNull();
       } finally {
+        Object.defineProperty(navigator, 'locks', {
+          value: originalLocks,
+          configurable: true,
+        });
+      }
+    });
+
+    it('demonstrates that localStorage mutex is not used and fails closed to prevent TOCTOU races', async () => {
+      const originalLocks = navigator.locks;
+      Object.defineProperty(navigator, 'locks', {
+        value: undefined,
+        configurable: true,
+      });
+
+      const setItemSpy = vi.spyOn(Storage.prototype, 'setItem');
+
+      try {
+        await expect(
+          executeWithRefreshLock(async () => 'action')
+        ).rejects.toThrow('Web Locks API unavailable');
+
+        // Must NEVER write lock flags to localStorage
+        expect(setItemSpy).not.toHaveBeenCalledWith(expect.stringContaining('lock'), expect.anything());
+      } finally {
+        setItemSpy.mockRestore();
         Object.defineProperty(navigator, 'locks', {
           value: originalLocks,
           configurable: true,

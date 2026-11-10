@@ -8,11 +8,13 @@ from app.models.rbac import (
     ScenarioAccessGrant,
     UserRole,
 )
+from app.models.incident import Incident
 from app.models.token import RefreshToken
 from app.models.user import User
 
 __all__ = [
     "Base",
+    "Incident",
     "Permission",
     "RefreshToken",
     "Role",

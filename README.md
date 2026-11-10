@@ -476,3 +476,124 @@ CLIMAFORGE Milestone 16A delivers production-grade authentication, session manag
   - **Multi-Tab Lifecycle Synchronization**: Immediate cross-tab logout and session expiration propagation without redirect loops or stale credential restoration.
   - **Safe Browser Compatibility Fallback**: Automatic feature detection and graceful fallback execution for environments lacking Web Locks or BroadcastChannel.
   - **Multi-Context Test Suite**: 43 frontend tests (including genuine multi-context browser tab simulation with concurrent lock contention and backend replay verification) + 250 backend tests.
+
+---
+
+## Milestone 5: Advisory AI Gateway (Nugen)
+
+Milestone 5 delivers a modular, secure, server-side Nugen Advisory AI Gateway providing non-authoritative decision support, grounded explanations, and intervention recommendations:
+
+- **Strict Authority Separation**:
+  - The deterministic risk engine (Algorithms 0–13) remains 100% authoritative.
+  - Nugen acts strictly as an advisory layer; it cannot change risk scores, mutate severity bands, alter cascade propagation probabilities, bypass resource budget checks, reorder feasible interventions, or modify scenario definitions.
+  - All Nugen outputs carry explicit non-authoritative markers (`NON-AUTHORITATIVE ADVISORY`) and mandatory human-review disclaimers in API responses and frontend views.
+- **Modular Server-Side Provider Adapters**:
+  - **Deterministic Mock Provider**: Offline, reproducible advisory recommendations and natural language explanations based on grounded scenario context.
+  - **OpenAI-Compatible Chat Completions Provider**: Live server-side LLM connectivity with configurable timeouts (`NUGEN_TIMEOUT_SECONDS`), models, and credentials.
+  - **Deterministic Fallback Provider**: Activated automatically when the live provider times out, returns HTTP 5xx errors, encounters connection refusal, is disabled, or returns malformed/unparseable JSON. Grounded entirely in verified Algorithm 0–13 outputs without hallucinations.
+- **Algorithms 10 & 13 Integration**:
+  - Algorithm 10 evaluates `nugen_agreement` against the top-ranked feasible action without altering deterministic ranking.
+  - Algorithm 13 embeds advisory metadata (`ai_status`, `nugen_advisory_status`, `nugen_recommendation`, `human_review_warning`) into the Command Decision Card.
+- **Grounded Chatbot API & Gateway Status**:
+  - `POST /api/chatbot/message`: Backward-compatible grounded decision support endpoint protected by `PERM_CHATBOT_ASK`.
+  - `GET /api/chatbot/status`: Public capability and mode inspection endpoint reporting provider configuration without leaking credentials.
+- **Secret Isolation**:
+  - API keys (`NUGEN_API_KEY`, `CHATBOT_API_KEY`) are isolated to backend server configuration and never exposed to the frontend or included in API responses.
+- **Test Suite**:
+  - 15 dedicated scenarios covering mock, OpenAI-compatible completions, timeout fallback, unavailable 503 fallback, invalid response fallback, network failure fallback, grounded content verification, missing telemetry handling, disabled mode, authority preservation, RBAC enforcement, secret isolation, chatbot compatibility, and Alg 0–13 regression.
+
+---
+
+## Milestone 6: Emergency Chatbot Online (Alert & Safe Route)
+
+Milestone 6 delivers citizen-accessible hazard warnings, deterministic evacuation routing, and emergency shelter discovery grounded in authoritative scenario risk and cascade outputs:
+
+- **Pre-Calamity Citizen Alert System**:
+  - Classifies hazard severity into citizen-facing tiers: `CRITICAL` ($\ge 75.0$), `HIGH` ($50.0 \le \text{score} < 75.0$), `MEDIUM` ($25.0 \le \text{score} < 50.0$), and `LOW` ($< 25.0$).
+  - Directly extracts dominant physical hazard causes (`dominant_cause`) from Algorithm 1/2 factor breakdowns without hallucination.
+  - Generates clear, non-alarmist warning descriptions and actionable emergency instructions.
+- **Safe Evacuation Routing Engine**:
+  - Calculates deterministic shortest safe paths from hazard zones to confirmed shelters (`SafePoint`) using NetworkX Dijkstra traversal.
+  - Dynamically prunes flooded/impaired transportation nodes identified as `FAILING` ($p \ge \tau = 0.30$) in Algorithm 5 cascade analysis.
+  - Automatically identifies and diverts onto safe elevated perimeter bypass corridors (e.g. `ROAD-PERIM-01`) when low-elevation arterial roads are flooded.
+  - Fail-Closed Safety: Returns explicit status `BLOCKED` with detailed obstacle listings and shelter-in-place instructions when all exit corridors are severed.
+  - Strictly asserts `is_live_confirmed: false` and `is_simulated: true` across all route plans.
+- **Authenticated Scenario-Scoped API Endpoints**:
+  - `GET /api/scenarios/{scenario_id}/alerts`: Pre-calamity alerts guarded by `PERM_SCENARIO_READ`.
+  - `GET /api/scenarios/{scenario_id}/safe-points`: Shelter discovery guarded by `PERM_SCENARIO_READ`.
+  - `POST /api/scenarios/{scenario_id}/evacuation-route`: Route planning guarded by `PERM_CHATBOT_ASK`.
+  - `GET /api/scenarios/{scenario_id}/evacuation-route/{route_id}`: Cached route plan retrieval.
+- **Frontend Emergency UI Integration**:
+  - `EmergencyChatbotTab.tsx`: Citizen alert warning cards, interactive shelter routing selector, turn-by-turn waypoint guidance, and simulation badges.
+  - `RiskMapTab.tsx`: Active evacuation corridor overlays and designated safe refuge inspector cards.
+- **Automated Verification**:
+  - 18 new automated backend tests (total 288 passed, 0 failed).
+  - 4 new frontend tests (total 48 passed, 0 failed).
+  - 7 genuine Playwright Chromium E2E tests (100% passed).
+
+## Milestone 7: Panic Phase, Offline Cache & Client SOS Outbox
+
+Milestone 7 delivers mission-critical offline resilience, browser IndexedDB storage, and duplicate-safe emergency SOS distress dispatch for network-interrupted disaster environments:
+
+- **Native Client IndexedDB Offline Store (`frontend/src/services/offlineStorage.ts`)**:
+  - `climaforge_offline_store` (v1) with three typed object stores:
+    - `scenario_cache`: Persists scenario metadata, pre-calamity alerts, and emergency shelters with expiration timestamps.
+    - `route_cache`: Persists active evacuation corridors, turn-by-turn waypoints, and hazard bypass geometries.
+    - `sos_outbox`: Durable FIFO queue for pending citizen SOS distress reports with UUID keys and state tracking (`NOT_SENT` vs `ACKNOWLEDGED`).
+  - Strict security boundary: Zero access tokens, refresh tokens, or user credentials stored in IndexedDB.
+  - Graceful degradation: Explicit warnings when IndexedDB is blocked or disabled by private browsing modes.
+- **Offline Synchronization Service (`frontend/src/services/offlineSync.ts`)**:
+  - Online/offline window event listeners with real-time connectivity status subscriptions.
+  - Automatic reconnection outbox drainage: Transmits pending distress signals upon network restoration without user intervention.
+  - Retry-safe outbox retention: Incidents remain durably queued as `NOT_SENT` during network or server failures (zero silent loss).
+- **High-Contrast Panic Phase UI (`frontend/src/components/EmergencyChatbotTab.tsx`)**:
+  - Dedicated "Enter Panic Phase (Offline SOS)" toggle and "Simulate Offline / Network Loss" controls.
+  - Prominent "OFFLINE SURVIVAL MODE" banner displaying cache age and emergency instructions.
+  - Citizen SOS Distress Dispatch form supporting incident categorization (`RISING_WATER`, `MEDICAL_EMERGENCY`, `STRANDED_PERSONS`, `ROAD_BLOCKED`), urgency rating (`CRITICAL`, `HIGH`, `MEDIUM`), and coordinates.
+  - Real-time client outbox queue inspector visualizing synchronization states (`NOT_SENT` in amber, `ACKNOWLEDGED` in emerald).
+- **Authenticated, Idempotent Incident Synchronization API (`backend/app/routers/incidents.py`)**:
+  - `POST /api/scenarios/{scenario_id}/incidents/sync`: Accepts batch incident synchronization payloads guarded by `PERM_SCENARIO_READ`.
+  - `GET /api/scenarios/{scenario_id}/incidents`: Retrieves registered scenario incidents.
+  - Durable SQLite persistence: `incidents` table managed via Alembic migration (`0004_incidents_table.py`) with unique client UUID `incident_id`.
+  - Idempotency & Deduplication: Atomic duplicate recognition and safe handling of concurrent identical submissions without HTTP 500 crashes.
+  - Cross-scenario isolation: Prevents incident identifier collisions across distinct emergency scenarios.
+  - Audit logging: Emits authentic `INCIDENT_SYNC` events to `SESSION_AUDIT_LOGS` only after durable database commit.
+- **Automated Verification**:
+  - 14 new automated backend tests (`test_incidents_and_offline.py` — total 302 passed, 0 failed, 100%).
+  - 8 new frontend unit/integration tests (`m7_offline_sos.test.tsx` — total 56 passed, 0 failed, 100%).
+  - 7 genuine Playwright Chromium multi-tab E2E tests (100% passed).
+  - Frontend build: TypeScript & Vite production bundle compiled in <1s with 0 errors.
+
+
+---
+
+## Milestone 8: Final System Integration, Complete Project Validation & Hackathon Submission Readiness
+
+Milestone 8 completes the CLIMAFORGE platform with end-to-end multi-scene integration, automated real-browser demonstration suites, complete technical documentation, and a final hackathon submission package:
+
+- **6-Scene End-to-End Operational Integration**:
+  - **Scene 1 (Baseline Catchment Monitoring)**: `scenario-baseline`, zero hotspots, `SKIPPED_MONITORING_ONLY` status, 100% operational assets.
+  - **Scene 2 (Flash Flood Risk Escalation)**: `scenario-flash-flood`, Alg 1 risk score 82.4 `CRITICAL`, dominant hazard cause analysis, active inundation zones.
+  - **Scene 3 (Probabilistic Infrastructure Cascade)**: Alg 4/5 Noisy-OR failure propagation, substation and water treatment plant failures, DFS cycle safety verification.
+  - **Scene 4 (Tactical Intervention Knapsack & Decision Card)**: Alg 8 0/1 Knapsack resource allocation, Alg 10 multi-criteria ranking, Alg 13 Command Decision Card synthesis, strict Nugen advisory AI separation.
+  - **Scene 5 (Citizen Pre-Calamity Alerts & Evacuation Routing)**: Citizen-facing severity tiers, Dijkstra shortest-safe-path hazard-avoidance routing avoiding flooded arterial corridors, turn-by-turn guidance, simulation disclaimers.
+  - **Scene 6 (Offline Panic Resilience & Client SOS Outbox)**: Native IndexedDB caching, offline panic survival mode, client SOS outbox queuing `NOT_SENT` reports, automatic background reconnection sync `ACKNOWLEDGED`, duplicate prevention.
+- **Automated Real-Browser Demonstration Suite (`frontend/e2e/m8_end_to_end_demo.spec.ts`)**:
+  - Executes the complete 6-scene operational workflow in real headless Chromium via Playwright in ~2.3 seconds.
+  - 100% deterministic assertion coverage verifying API contracts, state transitions, DOM elements, and accessibility attributes.
+- **Demonstration & Rehearsal Package (`docs/demo/`)**:
+  - `DEMO_RUNBOOK.md`: Step-by-step instructions for live presentation or video recording across all 6 scenes.
+  - `SCENARIO_MATRIX.md`: Comprehensive reference matrix for `scenario-baseline`, `scenario-flash-flood`, and `scenario-monsoon-alert`.
+  - `REHEARSAL_CHECKLIST.md`: Pre-flight, in-run, and contingency playbooks for live pitching.
+- **Comprehensive Hackathon Video Production Package (`docs/hackathon_video/`)**:
+  - `VIDEO_SCRIPT.md`: 5:30 word-for-word voiceover script with audio cues and timing markers.
+  - `VIDEO_STORYBOARD.md`: Shot-by-shot visual breakdown, camera pans, and UI callout overlays.
+  - `DEMO_RUNBOOK.md`, `SCREEN_RECORDING_CHECKLIST.md`, `JUDGING_CRITERIA_MAPPING.md`, `VIDEO_EVIDENCE_CHECKLIST.md`.
+- **Hackathon Submission Package (`docs/hackathon_submission/`)**:
+  - `PROJECT_OVERVIEW.md`, `TECHNICAL_ARCHITECTURE.md`, `INNOVATION_AND_IMPACT.md`, `DEMO_GUIDE.md`, `LIMITATIONS_AND_FUTURE_SCOPE.md`, `FINAL_TEST_REPORT.md`, `SUBMISSION_CHECKLIST.md`.
+- **Full Quality Gate Verification**:
+  - **Backend Pytest**: 302/302 tests passed (100%).
+  - **Frontend Vitest**: 56/56 unit and integration tests passed (100%).
+  - **Playwright E2E**: 8/8 real Chromium tests passed (7 multi-tab auth + 1 end-to-end demo, 100%).
+  - **ESLint**: Clean; 0 errors.
+  - **Frontend Production Build**: Vite + TypeScript compiled successfully.

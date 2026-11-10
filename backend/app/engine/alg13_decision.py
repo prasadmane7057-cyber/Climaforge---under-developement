@@ -220,13 +220,25 @@ def generate_decision_card(
         ]
         reason = " ".join(p for p in reason_parts if p)
 
-        # Nugen agreement
+        # Nugen agreement and advisory status
         nugen_action_id = (nugen_result or {}).get("recommended_action")
         nugen_agreement_flag = (
             nugen_action_id == iid if nugen_action_id else None
         )
+        source = (nugen_result or {}).get("source", "MOCK")
+        if source == "OPENAI_COMPATIBLE":
+            ai_status = "LIVE"
+        elif source == "DETERMINISTIC_FALLBACK":
+            ai_status = "FALLBACK"
+        elif source == "DISABLED":
+            ai_status = "DISABLED"
+        else:
+            ai_status = "MOCK"
 
-        quality_flags = [DATA_LABEL, "AI_STATUS:MOCK", "REQUIRES_HUMAN_REVIEW"]
+        nugen_advisory_status = (nugen_result or {}).get(
+            "advisory_status", "ADVISORY_ACCEPTED"
+        )
+        quality_flags = [DATA_LABEL, f"AI_STATUS:{ai_status}", "REQUIRES_HUMAN_REVIEW"]
 
         return {
             "status": "FEASIBLE",
@@ -244,7 +256,8 @@ def generate_decision_card(
             },
             "modelled_relative_change": modelled_relative_change,
             "quality_flags": quality_flags,
-            "ai_status": "MOCK",
+            "ai_status": ai_status,
+            "nugen_advisory_status": nugen_advisory_status,
             "nugen_recommendation": nugen_action_id,
             "nugen_agreement": nugen_agreement_flag,
             "human_review_warning": _HUMAN_REVIEW_WARNING,
@@ -254,6 +267,19 @@ def generate_decision_card(
         }
 
     # ---- All candidates failed — NO_FEASIBLE_INTERVENTION card ----
+    source = (nugen_result or {}).get("source", "MOCK")
+    if source == "OPENAI_COMPATIBLE":
+        ai_status = "LIVE"
+    elif source == "DETERMINISTIC_FALLBACK":
+        ai_status = "FALLBACK"
+    elif source == "DISABLED":
+        ai_status = "DISABLED"
+    else:
+        ai_status = "MOCK"
+    nugen_advisory_status = (nugen_result or {}).get(
+        "advisory_status", "ADVISORY_ACCEPTED"
+    )
+
     return {
         "status": "NO_FEASIBLE_INTERVENTION",
         "priority": zone_severity,
@@ -269,8 +295,9 @@ def generate_decision_card(
         ),
         "expected_impact": None,
         "modelled_relative_change": None,
-        "quality_flags": [DATA_LABEL, "AI_STATUS:MOCK", "REQUIRES_HUMAN_REVIEW"],
-        "ai_status": "MOCK",
+        "quality_flags": [DATA_LABEL, f"AI_STATUS:{ai_status}", "REQUIRES_HUMAN_REVIEW"],
+        "ai_status": ai_status,
+        "nugen_advisory_status": nugen_advisory_status,
         "nugen_recommendation": (nugen_result or {}).get("recommended_action"),
         "nugen_agreement": None,
         "human_review_warning": _HUMAN_REVIEW_WARNING,

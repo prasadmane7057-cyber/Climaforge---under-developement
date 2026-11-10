@@ -55,6 +55,11 @@ const TAB_TITLES: Record<NavigationTab, { label: string; title: string; subtitle
     title: 'Autonomous Citizen Emergency Guidance',
     subtitle: 'Pre-calamity warning, verified live navigation, and offline SOS outbox (Milestone 5 Preview)',
   },
+  environmental: {
+    label: 'Environmental Intel',
+    title: 'Real-Time Environmental Intelligence & Indrayani River Surveillance',
+    subtitle: 'Hyperlocal weather forecasting, IMD alerts, and verified MPCB surface water monitoring reference',
+  },
   'audit-log': {
     label: 'Audit Log',
     title: 'System Operational & UI Session Audit Log',

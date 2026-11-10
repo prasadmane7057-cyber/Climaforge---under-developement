@@ -9,6 +9,13 @@ from pydantic import BaseModel, Field
 from app.dependencies.auth import require_permission, require_scenario_access
 from app.engine.pipeline import execute_risk_engine
 from app.routers.audit import SESSION_AUDIT_LOGS
+from app.schemas.routing import (
+    CitizenAlertItem,
+    EvacuationRouteRequest,
+    EvacuationRouteResponse,
+    ScenarioAlertsResponse,
+    ScenarioSafePointsResponse,
+)
 from app.schemas.scenarios import (
     AuditEvent,
     ScenarioAnalysisResponse,
@@ -16,13 +23,22 @@ from app.schemas.scenarios import (
     ScenarioSummaryItem,
 )
 from app.schemas.scenario_data import get_scenario_by_id, list_scenario_summaries
+from app.services.alert_service import generate_scenario_alerts
+from app.services.routing_service import (
+    calculate_evacuation_route,
+    get_scenario_safe_points,
+)
 from app.security.rbac import (
+    PERM_CHATBOT_ASK,
     PERM_SCENARIO_READ,
     PERM_SCENARIO_RUN,
     PERM_SCENARIO_RUN_ADHOC,
 )
 
 router = APIRouter(prefix="/scenarios", tags=["Scenarios"])
+
+# Thread-safe in-memory cache of generated evacuation routes
+ROUTE_CACHE: Dict[str, EvacuationRouteResponse] = {}
 
 
 class AdHocRunRequest(BaseModel):
@@ -169,4 +185,75 @@ async def analyze_adhoc(
     )
 
     return ScenarioAnalysisResponse(**result)
+
+
+@router.get(
+    "/{scenario_id}/alerts",
+    response_model=ScenarioAlertsResponse,
+    summary="Get Pre-Calamity Citizen Alerts",
+    description="Retrieves public pre-calamity alerts and hazard warnings for the scenario catchments.",
+)
+async def get_scenario_alerts(
+    scenario_id: str,
+    scenario: ScenarioDetail = Depends(require_scenario_access(PERM_SCENARIO_READ)),
+) -> ScenarioAlertsResponse:
+    return generate_scenario_alerts(scenario=scenario)
+
+
+@router.get(
+    "/{scenario_id}/safe-points",
+    response_model=ScenarioSafePointsResponse,
+    summary="Discover Scenario Safe Points",
+    description="Retrieves available emergency evacuation shelters, capacities, and elevations.",
+)
+async def get_safe_points(
+    scenario_id: str,
+    scenario: ScenarioDetail = Depends(require_scenario_access(PERM_SCENARIO_READ)),
+) -> ScenarioSafePointsResponse:
+    return get_scenario_safe_points(scenario=scenario)
+
+
+@router.post(
+    "/{scenario_id}/evacuation-route",
+    response_model=EvacuationRouteResponse,
+    summary="Calculate Safe Evacuation Route",
+    description=(
+        "Calculates an optimal safe evacuation route from an origin zone to confirmed safe points, "
+        "strictly pruning flooded and failing infrastructure nodes using NetworkX Dijkstra traversal."
+    ),
+)
+async def plan_evacuation_route(
+    scenario_id: str,
+    payload: EvacuationRouteRequest,
+    scenario: ScenarioDetail = Depends(require_scenario_access(PERM_CHATBOT_ASK)),
+) -> EvacuationRouteResponse:
+    route = calculate_evacuation_route(
+        scenario=scenario,
+        origin_zone_id=payload.origin_zone_id,
+        destination_safe_point_id=payload.destination_safe_point_id,
+        avoid_watch_nodes=payload.avoid_watch_nodes,
+    )
+    ROUTE_CACHE[route.route_id] = route
+    return route
+
+
+@router.get(
+    "/{scenario_id}/evacuation-route/{route_id}",
+    response_model=EvacuationRouteResponse,
+    summary="Get Evacuation Route Status",
+    description="Retrieve a previously calculated evacuation route plan by its route ID.",
+)
+async def get_route_status(
+    scenario_id: str,
+    route_id: str,
+    scenario: ScenarioDetail = Depends(require_scenario_access(PERM_SCENARIO_READ)),
+) -> EvacuationRouteResponse:
+    route = ROUTE_CACHE.get(route_id)
+    if route is None or route.scenario_id != scenario_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Route '{route_id}' was not found for scenario '{scenario_id}'.",
+        )
+    return route
+
 

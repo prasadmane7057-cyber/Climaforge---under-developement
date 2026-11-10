@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Activity,
   AlertTriangle,
@@ -11,6 +11,13 @@ import type {
   ScenarioAnalysisResponse,
   ScenarioDetail,
 } from '../types/api';
+import {
+  getMapTilerStaticMapUrl,
+  isMapTilerConfigured,
+  MAPTILER_ATTRIBUTION,
+  MAPTILER_ATTRIBUTION_URL,
+  type MapTilerStyle,
+} from '../services/maptiler';
 
 interface RiskMapTabProps {
   scenarioDetail: ScenarioDetail | null;
@@ -42,16 +49,58 @@ export const RiskMapTab: React.FC<RiskMapTabProps> = ({
   isAnalyzing = false,
   analysisError = null,
 }) => {
-  const [selectedZoneId, setSelectedZoneId] = useState<string | null>(
-    scenarioDetail?.zones[0]?.zone_id ?? null,
-  );
+  const [selectedZoneIdOverride, setSelectedZoneIdOverride] = useState<string | null>(null);
 
-  useEffect(() => {
-    setSelectedZoneId(scenarioDetail?.zones[0]?.zone_id ?? null);
-  }, [scenarioDetail?.scenario_id]);
+  // MapTiler Basemap State
+  const [maptilerStyle, setMaptilerStyle] = useState<MapTilerStyle | 'schematic'>('schematic');
+  const [maptilerError, setMaptilerError] = useState<boolean>(false);
+  const isKeyConfigured = useMemo(() => isMapTilerConfigured(), []);
 
   const zones = scenarioDetail?.zones ?? [];
+  const selectedZoneId = selectedZoneIdOverride ?? scenarioDetail?.zones[0]?.zone_id ?? null;
+  const setSelectedZoneId = (id: string | null) => setSelectedZoneIdOverride(id);
+
   const selectedZone = zones.find((zone) => zone.zone_id === selectedZoneId);
+
+  const mapCenter = useMemo(() => {
+    if (selectedZone?.centroid_lat != null && selectedZone?.centroid_lon != null) {
+      return { lat: selectedZone.centroid_lat, lon: selectedZone.centroid_lon };
+    }
+    const currentZones = scenarioDetail?.zones ?? [];
+    const zonesWithCoords = currentZones.filter(
+      (z) => z.centroid_lat != null && z.centroid_lon != null,
+    );
+    if (zonesWithCoords.length > 0) {
+      const avgLat =
+        zonesWithCoords.reduce((acc, z) => acc + (z.centroid_lat || 0), 0) /
+        zonesWithCoords.length;
+      const avgLon =
+        zonesWithCoords.reduce((acc, z) => acc + (z.centroid_lon || 0), 0) /
+        zonesWithCoords.length;
+      return { lat: avgLat, lon: avgLon };
+    }
+    return { lat: 18.5204, lon: 73.8567 };
+  }, [selectedZone, scenarioDetail?.zones]);
+
+  const maptilerStaticUrl = useMemo(() => {
+    if (maptilerStyle === 'schematic' || !isKeyConfigured) return null;
+    return getMapTilerStaticMapUrl(
+      mapCenter.lon,
+      mapCenter.lat,
+      12,
+      900,
+      500,
+      maptilerStyle,
+    );
+  }, [mapCenter, isKeyConfigured, maptilerStyle]);
+  const safePoints = scenarioDetail?.safe_points ?? [];
+  const recommendedSafePoint = safePoints.find((sp) => sp.zone_id === selectedZoneId)
+    ?? safePoints.slice().sort((a, b) => (Number(b.elevation_m) || 0) - (Number(a.elevation_m) || 0))[0]
+    ?? null;
+  const targetSafePointZone = recommendedSafePoint
+    ? zones.find((z) => z.zone_id === recommendedSafePoint.zone_id)
+    : null;
+
   const hotspotCount = analysisResult?.hotspot_count
     ?? zones.filter((zone) => zone.is_hotspot).length;
   const highestRisk = analysisResult?.highest_risk_score
@@ -183,14 +232,78 @@ export const RiskMapTab: React.FC<RiskMapTabProps> = ({
                 <span className="canvas-kicker">Scenario schematic</span>
                 <h3 className="canvas-title">Catchment zone layout</h3>
               </div>
+              <div className="maptiler-style-selector" style={{ margin: '0 8px' }}>
+                <button
+                  type="button"
+                  className={`maptiler-style-btn ${maptilerStyle === 'schematic' ? 'active' : ''}`}
+                  onClick={() => setMaptilerStyle('schematic')}
+                  title="Schematic Vector View"
+                >
+                  Schematic
+                </button>
+                <button
+                  type="button"
+                  className={`maptiler-style-btn ${maptilerStyle === 'dataviz-dark' ? 'active' : ''}`}
+                  onClick={() => {
+                    setMaptilerStyle('dataviz-dark');
+                    setMaptilerError(false);
+                  }}
+                  title="MapTiler Dark Basemap"
+                >
+                  Dark
+                </button>
+                <button
+                  type="button"
+                  className={`maptiler-style-btn ${maptilerStyle === 'satellite' ? 'active' : ''}`}
+                  onClick={() => {
+                    setMaptilerStyle('satellite');
+                    setMaptilerError(false);
+                  }}
+                  title="MapTiler Satellite Basemap"
+                >
+                  Satellite
+                </button>
+                <button
+                  type="button"
+                  className={`maptiler-style-btn ${maptilerStyle === 'topo-v2' ? 'active' : ''}`}
+                  onClick={() => {
+                    setMaptilerStyle('topo-v2');
+                    setMaptilerError(false);
+                  }}
+                  title="MapTiler Topographic Basemap"
+                >
+                  Topo
+                </button>
+              </div>
               <span className="synthetic-badge">SYNTHETIC</span>
             </div>
 
             <div className="schematic-surface redesigned-schematic">
+              {maptilerStaticUrl && !maptilerError && (
+                <img
+                  className="maptiler-basemap-layer"
+                  src={maptilerStaticUrl}
+                  alt="MapTiler Basemap Layer"
+                  onError={() => setMaptilerError(true)}
+                />
+              )}
               <svg className="schematic-svg-layer" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
                 <path d="M 12 8 C 18 28, 20 42, 31 58 S 36 82, 48 96" fill="none" stroke="#3b9c91" strokeOpacity="0.38" strokeWidth="4" strokeLinecap="round" />
                 <path d="M 31 58 C 48 54, 68 58, 88 72" fill="none" stroke="#94a3b8" strokeOpacity="0.55" strokeWidth="0.8" strokeDasharray="2 2" />
                 <path d="M 20 42 C 38 38, 50 32, 72 28" fill="none" stroke="#94a3b8" strokeOpacity="0.45" strokeWidth="0.8" strokeDasharray="2 2" />
+                {selectedZone && targetSafePointZone && (
+                  <line
+                    x1={`${selectedZone.schematic_x}%`}
+                    y1={`${selectedZone.schematic_y}%`}
+                    x2={`${Math.min(92, targetSafePointZone.schematic_x + 3)}%`}
+                    y2={`${Math.min(92, targetSafePointZone.schematic_y + 7)}%`}
+                    stroke="#16a34a"
+                    strokeWidth="2.5"
+                    strokeDasharray="4 2"
+                    strokeOpacity="0.85"
+                    className="m6-map-corridor-active"
+                  />
+                )}
               </svg>
 
               {zones.map((zone) => {
@@ -241,6 +354,16 @@ export const RiskMapTab: React.FC<RiskMapTabProps> = ({
                 <span><i style={{ background: '#d97706' }} />High</span>
                 <span><i style={{ background: '#dc2626' }} />Critical</span>
               </div>
+              {isKeyConfigured && maptilerStyle !== 'schematic' && (
+                <a
+                  href={MAPTILER_ATTRIBUTION_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="maptiler-attribution-link"
+                >
+                  {MAPTILER_ATTRIBUTION}
+                </a>
+              )}
               <span className="map-context-note"><Info size={13} />Illustrative coordinates; not a production GIS layer</span>
             </div>
           </div>
@@ -281,6 +404,20 @@ export const RiskMapTab: React.FC<RiskMapTabProps> = ({
                   </div>
                 ) : (
                   <div className="inspector-geo-box"><span>Coordinate status</span><strong>Not provided</strong></div>
+                )}
+                {recommendedSafePoint && (
+                  <div style={{ marginTop: '12px', padding: '10px', background: 'var(--surface-muted)', borderRadius: '6px', border: '1px solid var(--border-subtle)' }}>
+                    <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#16a34a', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Shield size={12} /> Designated Evacuation Refuge
+                    </span>
+                    <h5 style={{ margin: '4px 0', fontSize: '0.8rem', color: 'var(--text-primary)' }}>{recommendedSafePoint.name}</h5>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+                      Zone: {recommendedSafePoint.zone_id} · Elevation: {recommendedSafePoint.elevation_m}m · Capacity: {Number(recommendedSafePoint.capacity_persons).toLocaleString()} persons
+                    </div>
+                    <div style={{ fontSize: '0.6rem', color: '#64748b', marginTop: '3px' }}>
+                      Active evacuation corridor highlighted on map (Simulated safe shelter)
+                    </div>
+                  </div>
                 )}
               </div>
             ) : (

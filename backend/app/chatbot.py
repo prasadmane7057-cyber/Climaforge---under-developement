@@ -11,6 +11,7 @@ from app.config import settings
 from app.engine.pipeline import execute_risk_engine
 from app.routers.audit import SESSION_AUDIT_LOGS
 from app.schemas.scenario_data import get_scenario_by_id
+from app.services.alert_service import generate_scenario_alerts
 
 
 READ_ONLY_SAFETY = (
@@ -124,7 +125,13 @@ def build_grounded_context(scenario_id: str, question: str) -> dict[str, Any]:
                 }
                 for intervention in detail.interventions
             ],
+            "safe_points": detail.safe_points,
         },
+        "safe_points": detail.safe_points,
+        "alerts": [
+            alert.model_dump(mode="json")
+            for alert in generate_scenario_alerts(detail, analysis).alerts
+        ],
         "recent_audit_events": recent_audit,
         "experimental_models": {
             "status": "not_authoritative",
@@ -155,6 +162,21 @@ def deterministic_fallback(question: str, context: dict[str, Any]) -> str:
             pieces.append("Data-quality flags: " + "; ".join(str(flag) for flag in missing[:6]) + ".")
         pieces.append("Unavailable from this system: " + ", ".join(unavailable) + ".")
         return "Grounded deterministic context:\n\n" + "\n".join(pieces)
+
+    if any(term in lower for term in ("evacuat", "route", "shelter", "safe point", "safe-point", "safe points", "alert", "warning")):
+        safe_points = context.get("safe_points") or context.get("scenario_definitions", {}).get("safe_points", [])
+        alerts = context.get("alerts", [])
+        lines = []
+        if alerts:
+            lines.append("Active pre-calamity alerts (simulated):")
+            for a in alerts[:4]:
+                lines.append(f"- [{a.get('severity')}] {a.get('zone_name')}: {a.get('headline')} (Cause: {a.get('dominant_cause')})")
+        if safe_points:
+            lines.append("\nDesignated emergency safe points / shelters:")
+            for sp in safe_points[:3]:
+                lines.append(f"- {sp.get('name')} (Zone: {sp.get('zone_id')}, Capacity: {sp.get('capacity_persons')}, Elevation: {sp.get('elevation_m')}m)")
+        lines.append("\nEvacuation routing must strictly avoid flooded and failing infrastructure nodes. Simulated guidance only; not live confirmed.")
+        return "Grounded evacuation & alert context:\n\n" + "\n".join(lines)
 
     if any(term in lower for term in ("intervention", "recommend", "compare", "resource", "what happens", "what-if")):
         ranking = analysis.get("intervention_ranking") or {}
@@ -233,13 +255,17 @@ def deterministic_fallback(question: str, context: dict[str, Any]) -> str:
 
 
 def provider_is_configured() -> bool:
-    provider = settings.chatbot_provider.strip().lower()
+    provider = (settings.nugen_provider or "").strip().lower()
+    legacy_provider = (settings.chatbot_provider or "").strip().lower()
+    active_provider = provider if provider in {"nugen", "openai-compatible", "openai_compatible"} else legacy_provider
+    api_key = settings.nugen_api_key or settings.chatbot_api_key
+    endpoint = settings.nugen_api_url or settings.nugen_endpoint or settings.chatbot_endpoint
     return (
         settings.nugen_enabled
         and not settings.nugen_mock_mode
-        and provider in {"openai-compatible", "openai_compatible"}
-        and bool(settings.chatbot_api_key or settings.nugen_api_key)
-        and bool(settings.chatbot_endpoint)
+        and active_provider in {"nugen", "openai-compatible", "openai_compatible"}
+        and bool(api_key)
+        and bool(endpoint)
     )
 
 
@@ -251,7 +277,7 @@ def call_openai_compatible(question: str, history: list[dict[str, str]], context
     messages.append({
         "role": "system",
         "content": "Grounded CLIMAFORGE context JSON (authoritative only where labeled deterministic):\n" +
-                   json.dumps(context, ensure_ascii=False, separators=(",", ":"))[:24000],
+                   json.dumps(context, default=str, ensure_ascii=False, separators=(",", ":"))[:24000],
     })
     for item in history[-12:]:
         role = item.get("role")
@@ -260,27 +286,33 @@ def call_openai_compatible(question: str, history: list[dict[str, str]], context
             messages.append({"role": role, "content": content[:2000]})
     messages.append({"role": "user", "content": question[:2000]})
 
+    model = settings.nugen_model or settings.chatbot_model or "Qwen/Qwen2.5-0.5B-Instruct"
+    max_tokens = getattr(settings, "nugen_max_tokens", 500) or 500
+    temperature = getattr(settings, "nugen_temperature", 0.1) or 0.1
     payload = {
-        "model": settings.chatbot_model,
+        "model": model,
         "messages": messages,
-        "temperature": 0.1,
-        "max_tokens": 700,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
     }
-    api_key = settings.chatbot_api_key or settings.nugen_api_key
+    api_key = settings.nugen_api_key or settings.chatbot_api_key
+    endpoint = settings.nugen_api_url or settings.nugen_endpoint or settings.chatbot_endpoint
+    timeout = settings.nugen_timeout_seconds if settings.nugen_timeout_seconds else settings.chatbot_timeout_seconds
     request = urllib.request.Request(
-        settings.chatbot_endpoint,
+        endpoint,
         data=json.dumps(payload).encode("utf-8"),
         headers={
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
             "Accept": "application/json",
+            "User-Agent": "CLIMAFORGE-Advisory-Client/1.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
         },
         method="POST",
     )
     try:
-        with urllib.request.urlopen(request, timeout=settings.chatbot_timeout_seconds) as response:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
             payload_result = json.loads(response.read().decode("utf-8"))
-    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError) as exc:
+    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, json.JSONDecodeError, Exception) as exc:
         raise RuntimeError("LLM provider request failed") from exc
 
     choices = payload_result.get("choices")

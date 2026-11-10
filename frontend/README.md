@@ -52,6 +52,15 @@ Frontend permissions match the backend definitions in `backend/app/security/rbac
 
 ---
 
+## M5 Nugen Advisory AI Gateway Integration
+
+- **Command Decision Card Advisory Badge**: Dynamically displays `ADVISORY: LIVE`, `ADVISORY: MOCK`, `ADVISORY: FALLBACK`, or `ADVISORY: DISABLED` alongside agreement indicators (`✓ Matches deterministic model selection` vs `⚠ Differs from deterministic model selection`).
+- **Non-Authoritative Disclaimers**: Explicit visual markers emphasizing that Algorithms 0–13 remain authoritative and human review is mandatory before operational deployment.
+- **Emergency Assistant UI**: Displays active assistant mode (`Grounded LLM`, `Deterministic mock`, or `Deterministic fallback`) with transparent message source attribution tags (`MOCK`, `LLM`, `DETERMINISTIC_FALLBACK`).
+- **Zero Frontend Secrets**: All advisory provider credentials remain strictly on the backend. No API keys or tokens are passed to or stored in client-side code.
+
+---
+
 ## Development & Verification
 
 ### Install Dependencies
@@ -63,7 +72,11 @@ npm install
 ```bash
 npm test
 ```
-Runs 43 comprehensive frontend tests covering:
+Runs 48 comprehensive frontend tests covering:
+- Milestone 6 Pre-Calamity Citizen Alerts presentation and dominant cause display
+- Milestone 6 Safe Evacuation Route calculation, turn-by-turn guidance, and flooded node avoidance
+- Milestone 6 Blocked route error states and shelter-in-place instructions
+- Milestone 6 Risk map designated evacuation refuges and dynamic corridor overlay
 - In-memory token security and storage isolation
 - CSRF token parsing and header injection
 - Deduplicated silent refresh on concurrent 401s within a single tab

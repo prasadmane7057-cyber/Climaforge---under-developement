@@ -24,6 +24,8 @@ from app.security.rbac import (
     get_user_permissions,
     get_user_roles,
     normalize_role_name,
+    PERM_SCENARIO_READ,
+    PERM_CHATBOT_ASK,
 )
 
 # Declares the token endpoint for OpenAPI; actual validation is explicit below.
@@ -117,6 +119,8 @@ def require_permission(*required_permissions: str) -> Callable[..., User | None]
     ) -> User | None:
         # Check demonstrator fallback
         if token is None:
+            if set(required_permissions).issubset({PERM_SCENARIO_READ, PERM_CHATBOT_ASK}):
+                return None
             if settings.jwt_signing_key is None:
                 return None
             raise _UNAUTHENTICATED
@@ -153,9 +157,9 @@ def require_scenario_access(
         token: str | None = Depends(oauth2_scheme),
         session: Session = Depends(get_db),
     ) -> ScenarioDetail:
-        # Demonstrator fallback when auth is unconfigured and no token is present
+        # Demonstrator fallback when auth is unconfigured or read-only/chatbot and no token is present
         if token is None:
-            if settings.jwt_signing_key is None:
+            if required_permission in {PERM_SCENARIO_READ, PERM_CHATBOT_ASK} or settings.jwt_signing_key is None:
                 scenario = get_scenario_by_id(scenario_id)
                 if not scenario:
                     raise HTTPException(
@@ -188,7 +192,7 @@ def require_scenario_access_with_user(
         session: Session = Depends(get_db),
     ) -> tuple[User | None, ScenarioDetail]:
         if token is None:
-            if settings.jwt_signing_key is None:
+            if required_permission in {PERM_SCENARIO_READ, PERM_CHATBOT_ASK} or settings.jwt_signing_key is None:
                 scenario = get_scenario_by_id(scenario_id)
                 if not scenario:
                     raise HTTPException(

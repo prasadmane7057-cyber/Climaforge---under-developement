@@ -240,8 +240,16 @@ def rank_interventions(
     if weights is None:
         weights = WEIGHTS_ALG10
 
-    # Use mock Nugen if no live recommendation provided
-    nugen_rec = nugen_recommendation or _MOCK_NUGEN_RESPONSE
+    # Use mock or gateway Nugen if no live recommendation provided
+    if nugen_recommendation is None:
+        try:
+            from app.services.nugen_gateway import nugen_gateway
+
+            nugen_rec = nugen_gateway.get_intervention_advisory()
+        except Exception:
+            nugen_rec = _MOCK_NUGEN_RESPONSE
+    else:
+        nugen_rec = nugen_recommendation
     nugen_action_id = nugen_rec.get("recommended_action")
 
     # Baseline (no intervention)
