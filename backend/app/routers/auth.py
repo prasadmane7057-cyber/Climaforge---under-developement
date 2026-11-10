@@ -21,17 +21,24 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.db.session import get_db
 from app.dependencies.auth import require_authenticated_user
+from app.models.token import RefreshToken
 from app.models.user import User
-from app.schemas.auth import CurrentUserResponse, LoginRequest, TokenResponse
+from app.schemas.auth import CurrentUserResponse, ErrorResponse, LoginRequest, TokenResponse
 from app.security.exceptions import (
     InvalidRefreshTokenError,
+    RefreshTokenError,
     TokenExpiredRefreshError,
     TokenReusedError,
+    TokenRevokedError,
 )
 from app.security.jwt import jwt_service
 from app.security.passwords import password_service
 from app.security.rate_limiter import login_limiter
-from app.security.refresh_tokens import RefreshTokenService, refresh_token_service
+from app.security.refresh_tokens import (
+    RefreshTokenService,
+    hash_refresh_token,
+    refresh_token_service,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -97,9 +104,22 @@ def _set_csrf_cookie(response: Response, csrf_value: str, max_age: int) -> None:
 
 
 def _clear_auth_cookies(response: Response) -> None:
-    """Expire both the refresh and CSRF cookies."""
-    response.delete_cookie(_REFRESH_COOKIE_NAME, path="/")
-    response.delete_cookie(_CSRF_COOKIE_NAME, path="/")
+    """Expire both the refresh and CSRF cookies with matching environment-aware flags."""
+    production = _is_production()
+    response.delete_cookie(
+        _REFRESH_COOKIE_NAME,
+        path="/",
+        httponly=True,
+        samesite="strict" if production else "lax",
+        secure=production,
+    )
+    response.delete_cookie(
+        _CSRF_COOKIE_NAME,
+        path="/",
+        httponly=False,
+        samesite="strict" if production else "lax",
+        secure=production,
+    )
 
 
 def _validate_csrf(request: Request) -> None:
@@ -131,9 +151,9 @@ def _get_client_ip(request: Request) -> str:
     forwarded_for = request.headers.get("x-forwarded-for")
     if forwarded_for:
         return forwarded_for.split(",")[0].strip()
-    if request.client:
+    if request.client and request.client.host:
         return request.client.host
-    return "unknown"
+    return "127.0.0.1"
 
 
 # ---------------------------------------------------------------------------
@@ -262,22 +282,13 @@ def refresh(
         new_raw_token, new_token_record = rt_service.rotate_refresh_token(
             session, climaforge_refresh_token
         )
-    except TokenReusedError:
-        # Replay detected — both cookies cleared by the rotation code already committed revocation
-        _clear_auth_cookies(response)
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    except TokenExpiredRefreshError:
-        _clear_auth_cookies(response)
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    except InvalidRefreshTokenError:
+    except (
+        TokenReusedError,
+        TokenExpiredRefreshError,
+        TokenRevokedError,
+        InvalidRefreshTokenError,
+        RefreshTokenError,
+    ):
         _clear_auth_cookies(response)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -341,17 +352,26 @@ def logout(
 ) -> dict:
     """Revoke the active refresh-token session and clear all auth cookies.
 
-    CSRF validation is enforced.  Absent cookies are tolerated (idempotent logout).
+    CSRF validation is enforced where cookie authentication is involved.
+    Absent cookies are tolerated (idempotent logout).
     Internal token details are never disclosed in the response.
     """
-    # 1. CSRF check (required even on logout; cookie is present)
-    _validate_csrf(request)
+    # 1. CSRF check (required where cookie authentication is involved)
+    if climaforge_refresh_token or request.cookies.get(_CSRF_COOKIE_NAME):
+        _validate_csrf(request)
 
-    # 2. Revoke session if cookie is present
+    # 2. Revoke session family if cookie is present
     if climaforge_refresh_token:
         rt_service = RefreshTokenService(settings)
         try:
-            rt_service.revoke_refresh_token(session, climaforge_refresh_token)
+            token_hash = hash_refresh_token(climaforge_refresh_token, rt_service.pepper)
+            token = session.execute(
+                select(RefreshToken).where(RefreshToken.token_hash == token_hash)
+            ).scalar_one_or_none()
+            if token is not None:
+                rt_service.revoke_session(session, token.family_id)
+            else:
+                rt_service.revoke_refresh_token(session, climaforge_refresh_token)
         except Exception:
             # Swallow all errors — logout must always succeed from the client's perspective
             pass
