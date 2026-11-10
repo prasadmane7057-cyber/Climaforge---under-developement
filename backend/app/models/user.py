@@ -11,6 +11,7 @@ from app.db.base import Base
 
 if TYPE_CHECKING:
     from app.models.token import RefreshToken
+    from app.models.rbac import Role, UserRole, ScenarioAccessGrant
 
 
 class User(Base):
@@ -66,6 +67,27 @@ class User(Base):
 
     refresh_tokens: Mapped[list["RefreshToken"]] = relationship(
         "RefreshToken",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+
+    user_roles: Mapped[list["UserRole"]] = relationship(
+        "UserRole",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+    roles: Mapped[list["Role"]] = relationship(
+        "Role",
+        secondary="auth_user_roles",
+        back_populates="users",
+        viewonly=True,
+        overlaps="user_roles",
+    )
+    scenario_grants: Mapped[list["ScenarioAccessGrant"]] = relationship(
+        "ScenarioAccessGrant",
+        foreign_keys="ScenarioAccessGrant.user_id",
         back_populates="user",
         cascade="all, delete-orphan",
         passive_deletes=True,

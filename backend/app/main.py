@@ -13,6 +13,7 @@ from app.routers.audit import router as audit_router
 from app.routers.ml_prediction import router as ml_prediction_router
 from app.routers.chatbot import router as chatbot_router
 from app.routers.auth import router as auth_router
+from app.routers.admin import router as admin_router
 
 
 @asynccontextmanager
@@ -59,6 +60,9 @@ app.include_router(chatbot_router, prefix="/api")
 app.include_router(auth_router)
 app.include_router(auth_router, prefix="/api")
 
+app.include_router(admin_router)
+app.include_router(admin_router, prefix="/api")
+
 
 @app.get("/", summary="Root Index")
 async def root():
@@ -72,5 +76,6 @@ async def root():
         "scenarios_url": "/api/scenarios",
         "audit_logs_url": "/api/audit-logs",
         "auth_url": "/api/auth",
+        "admin_url": "/api/admin",
         "disclaimer": "SYNTHETIC / ILLUSTRATIVE DATA ONLY",
     }

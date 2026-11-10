@@ -5,11 +5,13 @@ No synthetic or fabricated historical events are invented.
 """
 
 from datetime import datetime, timezone
-from typing import List
+from typing import Any, List
 import uuid
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
 
+from app.dependencies.auth import require_permission
 from app.schemas.scenarios import AuditEvent, CreateAuditEventRequest
+from app.security.rbac import PERM_AUDIT_CREATE, PERM_AUDIT_READ
 
 router = APIRouter(prefix="/audit-logs", tags=["Audit Log"])
 
@@ -48,7 +50,9 @@ SESSION_AUDIT_LOGS: List[AuditEvent] = [
     summary="List Audit Log Events",
     description="Retrieve chronological log of actual recorded backend and UI session events.",
 )
-async def get_audit_logs() -> List[AuditEvent]:
+async def get_audit_logs(
+    _: Any = Depends(require_permission(PERM_AUDIT_READ)),
+) -> List[AuditEvent]:
     """Retrieve chronological audit trail."""
     # Return in reverse chronological order (newest first)
     return sorted(SESSION_AUDIT_LOGS, key=lambda e: e.timestamp, reverse=True)
@@ -61,7 +65,10 @@ async def get_audit_logs() -> List[AuditEvent]:
     summary="Record Client Audit Event",
     description="Append a genuine user or client-side operational event to the audit trail.",
 )
-async def create_audit_event(payload: CreateAuditEventRequest) -> AuditEvent:
+async def create_audit_event(
+    payload: CreateAuditEventRequest,
+    _: Any = Depends(require_permission(PERM_AUDIT_CREATE)),
+) -> AuditEvent:
     """Record an authentic client interaction event."""
     new_event = AuditEvent(
         event_id=f"EVT-UI-{uuid.uuid4().hex[:8].upper()}",

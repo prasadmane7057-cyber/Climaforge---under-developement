@@ -272,6 +272,11 @@ def test_alembic_migrations_full_lifecycle_on_temporary_database(alembic_config:
     assert "alembic_version" in tables
     assert "users" in tables
     assert "refresh_tokens" in tables
+    assert "auth_roles" in tables
+    assert "auth_permissions" in tables
+    assert "auth_role_permissions" in tables
+    assert "auth_user_roles" in tables
+    assert "scenario_access_grants" in tables
 
     user_cols = {col["name"] for col in inspector.get_columns("users")}
     expected_user_cols = {
@@ -286,6 +291,13 @@ def test_alembic_migrations_full_lifecycle_on_temporary_database(alembic_config:
         "created_at", "revoked", "revoked_at",
     }
     assert expected_token_cols.issubset(token_cols)
+
+    # Verify seed roles and permissions
+    with engine.connect() as conn:
+        role_count = conn.execute(text("SELECT count(*) FROM auth_roles")).scalar()
+        assert role_count == 5
+        perm_count = conn.execute(text("SELECT count(*) FROM auth_permissions")).scalar()
+        assert perm_count == 15
 
     # 4. Verify data can be inserted into the migrated database
     with engine.begin() as conn:
@@ -306,6 +318,11 @@ def test_alembic_migrations_full_lifecycle_on_temporary_database(alembic_config:
     tables_after_downgrade = inspector.get_table_names()
     assert "users" not in tables_after_downgrade
     assert "refresh_tokens" not in tables_after_downgrade
+    assert "auth_roles" not in tables_after_downgrade
+    assert "auth_permissions" not in tables_after_downgrade
+    assert "auth_role_permissions" not in tables_after_downgrade
+    assert "auth_user_roles" not in tables_after_downgrade
+    assert "scenario_access_grants" not in tables_after_downgrade
 
     # 7. Re-run upgrade to head (ensures clean idempotent re-application)
     command.upgrade(alembic_config, "head")
@@ -313,5 +330,10 @@ def test_alembic_migrations_full_lifecycle_on_temporary_database(alembic_config:
     tables_reapplied = inspector.get_table_names()
     assert "users" in tables_reapplied
     assert "refresh_tokens" in tables_reapplied
+    assert "auth_roles" in tables_reapplied
+    assert "auth_permissions" in tables_reapplied
+    assert "auth_role_permissions" in tables_reapplied
+    assert "auth_user_roles" in tables_reapplied
+    assert "scenario_access_grants" in tables_reapplied
 
     engine.dispose()

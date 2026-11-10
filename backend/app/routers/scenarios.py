@@ -3,9 +3,10 @@
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 import uuid
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
+from app.dependencies.auth import require_permission, require_scenario_access
 from app.engine.pipeline import execute_risk_engine
 from app.routers.audit import SESSION_AUDIT_LOGS
 from app.schemas.scenarios import (
@@ -15,6 +16,11 @@ from app.schemas.scenarios import (
     ScenarioSummaryItem,
 )
 from app.schemas.scenario_data import get_scenario_by_id, list_scenario_summaries
+from app.security.rbac import (
+    PERM_SCENARIO_READ,
+    PERM_SCENARIO_RUN,
+    PERM_SCENARIO_RUN_ADHOC,
+)
 
 router = APIRouter(prefix="/scenarios", tags=["Scenarios"])
 
@@ -34,7 +40,9 @@ class AdHocRunRequest(BaseModel):
     summary="List Scenarios",
     description="List all available synthetic demonstration scenarios for the operations dashboard.",
 )
-async def get_scenarios() -> List[ScenarioSummaryItem]:
+async def get_scenarios(
+    _: Any = Depends(require_permission(PERM_SCENARIO_READ)),
+) -> List[ScenarioSummaryItem]:
     """Retrieve catalog of demo scenarios."""
     return list_scenario_summaries()
 
@@ -45,14 +53,11 @@ async def get_scenarios() -> List[ScenarioSummaryItem]:
     summary="Get Scenario Detail",
     description="Retrieve comprehensive zone telemetry and risk metrics for a specific scenario.",
 )
-async def get_scenario(scenario_id: str) -> ScenarioDetail:
+async def get_scenario(
+    scenario_id: str,
+    scenario: ScenarioDetail = Depends(require_scenario_access(PERM_SCENARIO_READ)),
+) -> ScenarioDetail:
     """Retrieve full details of the requested scenario."""
-    scenario = get_scenario_by_id(scenario_id)
-    if not scenario:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Scenario '{scenario_id}' was not found in the demonstrator catalog.",
-        )
     return scenario
 
 
@@ -66,15 +71,11 @@ async def get_scenario(scenario_id: str) -> ScenarioDetail:
         "and Algorithm 3 flood impact/exposure."
     ),
 )
-async def analyze_scenario(scenario_id: str) -> ScenarioAnalysisResponse:
+async def analyze_scenario(
+    scenario_id: str,
+    scenario: ScenarioDetail = Depends(require_scenario_access(PERM_SCENARIO_RUN)),
+) -> ScenarioAnalysisResponse:
     """Execute deterministic calculation pipeline (Algorithms 0–3) on selected scenario."""
-    scenario = get_scenario_by_id(scenario_id)
-    if not scenario:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Scenario '{scenario_id}' was not found in the demonstrator catalog.",
-        )
-
     # Transform scenario zones into raw engine inputs
     raw_zones: List[Dict[str, Any]] = []
     for z in scenario.zones:
@@ -133,7 +134,10 @@ async def analyze_scenario(scenario_id: str) -> ScenarioAnalysisResponse:
     summary="Run Ad-Hoc Flood Analysis",
     description="Executes deterministic Algorithms 0–3 directly on a user-provided array of zone telemetry.",
 )
-async def analyze_adhoc(payload: AdHocRunRequest) -> ScenarioAnalysisResponse:
+async def analyze_adhoc(
+    payload: AdHocRunRequest,
+    _: Any = Depends(require_permission(PERM_SCENARIO_RUN_ADHOC)),
+) -> ScenarioAnalysisResponse:
     """Execute calculation pipeline on custom zone payload."""
     if not payload.zones:
         raise HTTPException(

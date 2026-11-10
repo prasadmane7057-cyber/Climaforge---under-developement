@@ -1,11 +1,13 @@
 """Read-only grounded chatbot API."""
 
-from typing import Literal
+from typing import Any, Literal
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field, field_validator
 
 from app.chatbot import generate_answer
+from app.dependencies.auth import require_permission
+from app.security.rbac import PERM_CHATBOT_ASK
 
 
 router = APIRouter(prefix="/chatbot", tags=["Grounded Chatbot"])
@@ -45,7 +47,10 @@ class ChatbotResponse(BaseModel):
 
 
 @router.post("/message", response_model=ChatbotResponse, summary="Ask the grounded CLIMAFORGE assistant")
-async def chatbot_message(payload: ChatbotRequest) -> ChatbotResponse:
+async def chatbot_message(
+    payload: ChatbotRequest,
+    _: Any = Depends(require_permission(PERM_CHATBOT_ASK)),
+) -> ChatbotResponse:
     result = generate_answer(
         scenario_id=payload.scenario_id,
         question=payload.question,
