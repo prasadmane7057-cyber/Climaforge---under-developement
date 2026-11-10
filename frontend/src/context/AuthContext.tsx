@@ -30,7 +30,9 @@ import {
   logoutUser,
   restoreSession,
   onSessionExpired,
+  fetchCurrentUser,
 } from '../services/auth';
+import { onAuthBroadcast } from '../services/authSync';
 import { AuthContext, type AuthContextType } from './authContextDef';
 
 export interface AuthProviderProps {
@@ -69,7 +71,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initSession();
 
     // 2. Subscribe to session expiration events from API interceptor
-    const unsubscribe = onSessionExpired(() => {
+    const unsubscribeLocal = onSessionExpired(() => {
       if (!isMounted) return;
       setUser((currentUser) => {
         if (currentUser) {
@@ -79,9 +81,50 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
     });
 
+    // 3. Subscribe to cross-tab auth broadcast events (M16A.7)
+    const unsubscribeSync = onAuthBroadcast(async (msg) => {
+      if (!isMounted) return;
+
+      if (msg.type === 'AUTH_LOGOUT') {
+        setUser(null);
+        setStatus('unauthenticated');
+        setError(null);
+      } else if (msg.type === 'SESSION_EXPIRED') {
+        setUser(null);
+        setStatus('session-expired');
+      } else if (msg.type === 'AUTH_LOGIN') {
+        try {
+          const profile = await fetchCurrentUser();
+          if (isMounted) {
+            setUser(profile);
+            setStatus('authenticated');
+            setError(null);
+            setIsLoginModalOpen(false);
+          }
+        } catch {
+          // Ignore sync failure
+        }
+      } else if (msg.type === 'REFRESH_COMPLETED') {
+        setUser((currentUser) => {
+          if (!currentUser) {
+            fetchCurrentUser()
+              .then((profile) => {
+                if (isMounted) {
+                  setUser(profile);
+                  setStatus('authenticated');
+                }
+              })
+              .catch(() => {});
+          }
+          return currentUser;
+        });
+      }
+    });
+
     return () => {
       isMounted = false;
-      unsubscribe();
+      unsubscribeLocal();
+      unsubscribeSync();
     };
   }, []);
 

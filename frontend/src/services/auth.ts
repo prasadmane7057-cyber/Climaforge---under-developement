@@ -1,17 +1,29 @@
 /**
- * Authentication and secure session client for CLIMAFORGE M16A.6.
+ * Authentication and secure session client for CLIMAFORGE M16A.6 / M16A.7.
  *
  * Security Principles:
  * - Access tokens are stored exclusively in-memory (never in localStorage or sessionStorage).
  * - Refresh tokens are handled via HttpOnly, SameSite cookies managed by the browser.
  * - CSRF double-submit protection: reads the `csrf_token` cookie and attaches `X-CSRF-Token` header.
- * - Refresh deduplication: concurrent refresh attempts share a single inflight promise to prevent
- *   replay-protection family revocation races on the backend.
- * - Passwords and raw tokens are never logged.
+ * - Single-tab refresh deduplication: concurrent refresh attempts share a single inflight promise.
+ * - Cross-tab refresh coordination: uses Web Locks API ('climaforge_refresh_lock') and
+ *   BroadcastChannel ('climaforge_auth') to ensure only one tab rotates tokens at a time,
+ *   preventing replay-protection family revocation across multiple browser tabs.
+ * - Passwords, refresh tokens, and cookies are never logged or broadcast.
  */
 
 import type { UserProfile, TokenResponse } from '../types/auth';
 import { getApiBaseUrl } from './api';
+import {
+  executeWithRefreshLock,
+  isRecentCrossTabSessionExpired,
+  clearCrossTabState,
+  recordRefreshCompletedCrossTab,
+  recordSessionExpiredCrossTab,
+  recordLogoutCrossTab,
+  recordLoginCrossTab,
+  onAuthBroadcast,
+} from './authSync';
 
 // ============================================================================
 // In-Memory Token Storage (Strict Isolation)
@@ -28,6 +40,22 @@ export function setAccessToken(token: string | null): void {
 
 export function clearAccessToken(): void {
   inMemoryAccessToken = null;
+  clearCrossTabState();
+}
+
+// Wire listener so cross-tab broadcasts update in-memory state automatically
+export function setupAuthCrossTabSync(): () => void {
+  return onAuthBroadcast((msg) => {
+    if (msg.type === 'AUTH_LOGOUT') {
+      clearAccessToken();
+    } else if (msg.type === 'SESSION_EXPIRED') {
+      clearAccessToken();
+    }
+  });
+}
+
+if (typeof window !== 'undefined') {
+  setupAuthCrossTabSync();
 }
 
 // ============================================================================
@@ -57,8 +85,11 @@ export function onSessionExpired(listener: SessionExpiredListener): () => void {
   };
 }
 
-export function notifySessionExpired(): void {
+export function notifySessionExpired(broadcast = true): void {
   clearAccessToken();
+  if (broadcast) {
+    recordSessionExpiredCrossTab();
+  }
   sessionExpiredListeners.forEach((listener) => {
     try {
       listener();
@@ -69,44 +100,65 @@ export function notifySessionExpired(): void {
 }
 
 // ============================================================================
-// Concurrent Refresh Deduplication
+// Cross-Tab & Single-Tab Refresh Coordination (M16A.7)
 // ============================================================================
 let activeRefreshPromise: Promise<string | null> | null = null;
 
 /**
- * Execute silent token refresh with atomic promise deduplication.
- * Concurrency guard prevents replay-protection revocation from simultaneous 401s.
+ * Execute silent token refresh with Web Locks exclusive cross-tab coordination
+ * and within-tab single-flight promise deduplication.
+ *
+ * Guarantees:
+ * 1. Only ONE tab executes the network refresh call at any given moment via Web Locks.
+ * 2. When Tab A finishes, the browser cookie jar contains the newly rotated refresh token.
+ * 3. Waiting tabs execute sequentially using the updated cookie jar — preventing replay detection.
+ * 4. Zero credentials (access token, refresh token, cookie, password) are ever broadcast.
+ * 5. Access tokens exist STRICTLY within the private JavaScript memory of each tab context.
  */
 export async function refreshAccessToken(): Promise<string | null> {
+  // If a refresh is already in flight within this tab, reuse its promise
   if (activeRefreshPromise) {
     return activeRefreshPromise;
   }
 
   activeRefreshPromise = (async () => {
     try {
-      const baseUrl = getApiBaseUrl();
-      const csrfToken = getCsrfToken();
-      const headers: Record<string, string> = {
-        Accept: 'application/json',
-      };
-      if (csrfToken) {
-        headers['X-CSRF-Token'] = csrfToken;
-      }
+      return await executeWithRefreshLock(async () => {
+        // 1. If another tab discovered the session was expired/revoked, abort immediately
+        if (isRecentCrossTabSessionExpired()) {
+          clearAccessToken();
+          return null;
+        }
 
-      const response = await fetch(`${baseUrl}/api/auth/refresh`, {
-        method: 'POST',
-        headers,
-        credentials: 'include',
+        // 2. Issue the actual network refresh request with exclusive lock
+        const baseUrl = getApiBaseUrl();
+        const csrfToken = getCsrfToken();
+        const headers: Record<string, string> = {
+          Accept: 'application/json',
+        };
+        if (csrfToken) {
+          headers['X-CSRF-Token'] = csrfToken;
+        }
+
+        const response = await fetch(`${baseUrl}/api/auth/refresh`, {
+          method: 'POST',
+          headers,
+          credentials: 'include',
+        });
+
+        if (!response.ok) {
+          clearAccessToken();
+          recordSessionExpiredCrossTab();
+          return null;
+        }
+
+        const data: TokenResponse = await response.json();
+        // Access token is stored ONLY in this tab context's private memory
+        setAccessToken(data.access_token);
+        // Broadcast non-sensitive completion signal (timestamp only, NO tokens/secrets)
+        recordRefreshCompletedCrossTab();
+        return data.access_token;
       });
-
-      if (!response.ok) {
-        clearAccessToken();
-        return null;
-      }
-
-      const data: TokenResponse = await response.json();
-      setAccessToken(data.access_token);
-      return data.access_token;
     } catch {
       clearAccessToken();
       return null;
@@ -129,8 +181,8 @@ export interface LoginResult {
 
 /**
  * Submit user credentials to POST /api/auth/login.
- * On success, stores access token in memory and loads current user profile.
- * Never logs credentials.
+ * On success, stores access token in memory, synchronizes across tabs,
+ * and loads current user profile. Never logs credentials.
  */
 export async function loginUser(email: string, password: string): Promise<LoginResult> {
   const baseUrl = getApiBaseUrl();
@@ -178,6 +230,9 @@ export async function loginUser(email: string, password: string): Promise<LoginR
   const tokenData: TokenResponse = await response.json();
   setAccessToken(tokenData.access_token);
 
+  // Synchronize login state across tabs (never broadcasts credentials)
+  recordLoginCrossTab();
+
   // Retrieve authenticated profile
   const user = await fetchCurrentUser();
   return { user, token: tokenData.access_token };
@@ -185,7 +240,7 @@ export async function loginUser(email: string, password: string): Promise<LoginR
 
 /**
  * Revoke the current refresh session and clear cookies via POST /api/auth/logout.
- * Idempotent: unconditionally clears client-side in-memory token.
+ * Idempotent: unconditionally clears client-side in-memory token and notifies all tabs.
  */
 export async function logoutUser(): Promise<void> {
   const baseUrl = getApiBaseUrl();
@@ -207,6 +262,7 @@ export async function logoutUser(): Promise<void> {
     // Logout always succeeds on client side even if server is unreachable
   } finally {
     clearAccessToken();
+    recordLogoutCrossTab();
   }
 }
 
@@ -254,4 +310,3 @@ export async function restoreSession(): Promise<UserProfile | null> {
     return null;
   }
 }
-

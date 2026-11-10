@@ -468,3 +468,11 @@ CLIMAFORGE Milestone 16A delivers production-grade authentication, session manag
   - **Centralized Auth State**: `AuthProvider` supporting `loading`, `authenticated`, `unauthenticated`, and `session-expired` states.
   - **Role-Aware UI & Action Guarding**: Dynamic role badges (`ADMIN`, `OPERATOR`, `VIEWER`), locked sidebar tabs for restricted modules, "Run Analysis" permission checks, and `UnauthorizedView`.
   - **Testing**: 250 backend pytest tests + 30 frontend Vitest integration tests.
+- **M16A.7 (Cross-Tab Authentication Coordination & Session Hardening)**:
+  - **Web Locks Exclusive Refresh Coordination**: Implemented `navigator.locks.request('climaforge_refresh_lock', ...)` to guarantee strict FIFO mutual exclusion for token refresh across all open browser tabs.
+  - **Shared Cookie Jar Synchronization**: Sequential lock acquisition ensures waiting tabs send the freshly rotated refresh token cookie, completely eliminating concurrent refresh-token replay collisions and accidental token-family revocations.
+  - **Zero-Secret Cross-Tab Event Bus**: Implemented `new BroadcastChannel('climaforge_auth')` transmitting exclusively non-sensitive lifecycle events (`REFRESH_COMPLETED`, `AUTH_LOGOUT`, `SESSION_EXPIRED`, `AUTH_LOGIN`).
+  - **Strict Bearer Token Isolation**: Access tokens exist exclusively in the private JavaScript heap memory of each tab. Access tokens, refresh tokens, cookies, passwords, and CSRF secrets are **NEVER** broadcast over BroadcastChannel and **NEVER** persisted to web storage.
+  - **Multi-Tab Lifecycle Synchronization**: Immediate cross-tab logout and session expiration propagation without redirect loops or stale credential restoration.
+  - **Safe Browser Compatibility Fallback**: Automatic feature detection and graceful fallback execution for environments lacking Web Locks or BroadcastChannel.
+  - **Multi-Context Test Suite**: 43 frontend tests (including genuine multi-context browser tab simulation with concurrent lock contention and backend replay verification) + 250 backend tests.

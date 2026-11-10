@@ -41,6 +41,17 @@ Frontend permissions match the backend definitions in `backend/app/security/rbac
 
 ---
 
+## M16A.7 Cross-Tab Authentication Coordination & Session Hardening
+
+- **Web Locks Exclusive Refresh Coordination**: Implemented `navigator.locks.request('climaforge_refresh_lock', ...)` to guarantee strict FIFO mutual exclusion for token refresh across all open browser tabs.
+- **Shared Cookie Jar Synchronization**: Sequential lock acquisition ensures waiting tabs send the freshly rotated refresh token cookie, completely eliminating concurrent refresh-token replay collisions and accidental token-family revocations.
+- **Zero-Secret Cross-Tab Event Bus**: Implemented `new BroadcastChannel('climaforge_auth')` transmitting exclusively non-sensitive lifecycle events (`REFRESH_COMPLETED`, `AUTH_LOGOUT`, `SESSION_EXPIRED`, `AUTH_LOGIN`).
+- **Strict Bearer Token Isolation**: Access tokens exist exclusively in the private JavaScript heap memory of each tab. Access tokens, refresh tokens, cookies, passwords, and CSRF secrets are **NEVER** broadcast over BroadcastChannel and **NEVER** persisted to web storage.
+- **Multi-Tab Lifecycle Synchronization**: Immediate cross-tab logout and session expiration propagation without redirect loops or stale credential restoration.
+- **Safe Browser Compatibility Fallback**: Automatic feature detection and graceful fallback execution for environments lacking Web Locks or BroadcastChannel.
+
+---
+
 ## Development & Verification
 
 ### Install Dependencies
@@ -52,10 +63,15 @@ npm install
 ```bash
 npm test
 ```
-Runs 30 comprehensive frontend tests covering:
+Runs 43 comprehensive frontend tests covering:
 - In-memory token security and storage isolation
 - CSRF token parsing and header injection
-- Deduplicated silent refresh on concurrent 401s
+- Deduplicated silent refresh on concurrent 401s within a single tab
+- Multi-tab Web Locks mutual exclusion and contention
+- Multi-tab refresh-token rotation without replay-triggered token-family revocation
+- Multi-tab logout, session expiration, and login synchronization
+- Strict security audit: zero secret leakage on BroadcastChannel
+- Feature detection and graceful fallbacks for missing browser APIs
 - Login credential submission and error handling (401, 403, 429)
 - Idempotent logout and cookie clearance
 - Role and permission evaluation across all canonical roles
