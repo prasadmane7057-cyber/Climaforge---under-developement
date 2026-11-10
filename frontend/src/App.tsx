@@ -7,6 +7,11 @@ import { ConsequenceGraphTab } from './components/ConsequenceGraphTab';
 import { InterventionsTab } from './components/InterventionsTab';
 import { EmergencyChatbotTab } from './components/EmergencyChatbotTab';
 import { AuditLogTab } from './components/AuditLogTab';
+import { LoginModal } from './components/LoginModal';
+import { UnauthorizedView } from './components/UnauthorizedView';
+import { AuthProvider } from './context/AuthContext';
+import { useAuth } from './context/useAuth';
+import type { PermissionName } from './types/auth';
 import {
   checkBackendHealth,
   fetchScenarios,
@@ -24,9 +29,29 @@ import type {
   ScenarioAnalysisResponse,
   FloodPredictionResponse,
 } from './types/api';
+import { AlertTriangle, LogIn } from 'lucide-react';
 import './App.css';
 
-export const App: React.FC = () => {
+const TAB_PERMISSIONS: Record<NavigationTab, PermissionName> = {
+  overview: 'scenario.read',
+  'risk-map': 'scenario.read',
+  'consequence-graph': 'scenario.read',
+  interventions: 'scenario.read',
+  'emergency-chatbot': 'chatbot.ask',
+  'audit-log': 'audit.read',
+};
+
+export const OperationsDashboard: React.FC = () => {
+  const {
+    user,
+    status: authStatus,
+    logout,
+    hasPermission,
+    isLoginModalOpen,
+    openLoginModal,
+    closeLoginModal,
+  } = useAuth();
+
   const [activeTab, setActiveTab] = useState<NavigationTab>('overview');
   const [healthResult, setHealthResult] = useState<HealthCheckResult | null>(null);
   const [isCheckingHealth, setIsCheckingHealth] = useState<boolean>(true);
@@ -85,12 +110,16 @@ export const App: React.FC = () => {
         setScenarioDetail(detail);
         setSelectedScenarioId(scenarioId);
 
-        // Record real user interaction event
-        await recordClientAuditEvent('SCENARIO_LOADED', `Operator loaded scenario '${detail.name}'`, {
-          scenario_id: scenarioId,
-          severity: detail.severity,
-        });
-        loadAuditLogs();
+        // Record real user interaction event if user has audit.create permission or in demonstrator mode
+        if (!user || hasPermission('audit.create')) {
+          await recordClientAuditEvent('SCENARIO_LOADED', `Operator loaded scenario '${detail.name}'`, {
+            scenario_id: scenarioId,
+            severity: detail.severity,
+          });
+        }
+        if (!user || hasPermission('audit.read')) {
+          loadAuditLogs();
+        }
       } catch (err) {
         setErrorMessage(
           err instanceof Error
@@ -101,12 +130,19 @@ export const App: React.FC = () => {
         setIsLoadingScenario(false);
       }
     },
-    [loadAuditLogs]
+    [loadAuditLogs, user, hasPermission]
   );
 
-  // 4. Milestone 2 Run Analysis Action
+  // 4. Run Analysis Action with RBAC Guard
   const handleRunAnalysis = useCallback(async () => {
     if (isAnalyzing || !selectedScenarioId) return;
+
+    // RBAC check: Account must possess scenario.run permission
+    if (user && !hasPermission('scenario.run')) {
+      setAnalysisError('Permission Denied: Account lacks "scenario.run" permission. Execution restricted to Operator, Analyst, or Admin.');
+      return;
+    }
+
     setIsAnalyzing(true);
     setAnalysisError(null);
     try {
@@ -135,7 +171,9 @@ export const App: React.FC = () => {
           setMlPredictionError(err instanceof Error ? err.message : 'ML prediction failed');
         }
       }
-      await loadAuditLogs();
+      if (!user || hasPermission('audit.read')) {
+        await loadAuditLogs();
+      }
     } catch (err) {
       setAnalysisError(
         err instanceof Error ? err.message : 'Analysis failed to execute on backend'
@@ -144,9 +182,9 @@ export const App: React.FC = () => {
     } finally {
       setIsAnalyzing(false);
     }
-  }, [isAnalyzing, selectedScenarioId, loadAuditLogs, scenarioDetail]);
+  }, [isAnalyzing, selectedScenarioId, loadAuditLogs, scenarioDetail, user, hasPermission]);
 
-  // 4. Initial Bootstrap
+  // 5. Initial Bootstrap
   useEffect(() => {
     async function init() {
       await refreshHealth();
@@ -170,15 +208,21 @@ export const App: React.FC = () => {
   // Tab navigation handler
   const handleSelectTab = async (tab: NavigationTab) => {
     setActiveTab(tab);
-    await recordClientAuditEvent(
-      'USER_NAVIGATION',
-      `Operator navigated to ${tab.replace('-', ' ')} panel`,
-      { tab, scenario_id: selectedScenarioId }
-    );
-    if (tab === 'audit-log') {
+    if (!user || hasPermission('audit.create')) {
+      await recordClientAuditEvent(
+        'USER_NAVIGATION',
+        `Operator navigated to ${tab.replace('-', ' ')} panel`,
+        { tab, scenario_id: selectedScenarioId }
+      );
+    }
+    if (tab === 'audit-log' && (!user || hasPermission('audit.read'))) {
       loadAuditLogs();
     }
   };
+
+  // Evaluate Tab Access Permission
+  const requiredPermission = TAB_PERMISSIONS[activeTab];
+  const isTabAuthorized = !user || hasPermission(requiredPermission);
 
   return (
     <div className="operations-center-layout">
@@ -187,6 +231,9 @@ export const App: React.FC = () => {
         activeTab={activeTab}
         onSelectTab={handleSelectTab}
         backendOnline={!!healthResult?.success}
+        user={user}
+        onOpenLogin={openLoginModal}
+        onLogout={logout}
       />
 
       {/* Main Operations Content Area */}
@@ -201,7 +248,30 @@ export const App: React.FC = () => {
           selectedScenarioId={selectedScenarioId}
           onSelectScenario={loadScenario}
           isLoadingScenario={isLoadingScenario}
+          user={user}
+          onOpenLogin={openLoginModal}
+          onLogout={logout}
         />
+
+        {/* Session Expired Banner */}
+        {authStatus === 'session-expired' && (
+          <div className="session-expired-alert-bar" role="alert">
+            <div className="alert-content">
+              <AlertTriangle size={16} className="alert-icon" />
+              <span>
+                Your authenticated session has expired. Please sign in again to restore operator permissions.
+              </span>
+            </div>
+            <button
+              type="button"
+              className="btn btn-sm btn-primary"
+              onClick={openLoginModal}
+            >
+              <LogIn size={13} />
+              <span>Sign In Again</span>
+            </button>
+          </div>
+        )}
 
         <main className="dashboard-content-scroll">
           {/* Error Banner if connection or loading failed */}
@@ -218,72 +288,85 @@ export const App: React.FC = () => {
             </div>
           )}
 
-          {/* Active Navigation Panel */}
-          {activeTab === 'overview' && (
-            <OverviewTab
-              scenarios={scenarios}
-              selectedScenarioId={selectedScenarioId}
-              scenarioDetail={scenarioDetail}
-              isLoadingScenario={isLoadingScenario}
-              onSelectScenario={loadScenario}
-              healthResult={healthResult}
-              recentAuditLogs={auditLogs}
-              analysisResult={analysisResult}
-              isAnalyzing={isAnalyzing}
-              analysisError={analysisError}
-              onRunAnalysis={handleRunAnalysis}
-              onNavigateTab={handleSelectTab}
-              mlPrediction={mlPrediction}
-              mlPredictionError={mlPredictionError}
+          {/* RBAC Route Access Guard */}
+          {!isTabAuthorized ? (
+            <UnauthorizedView
+              requiredPermission={requiredPermission}
+              userRole={user?.role}
+              onNavigateHome={() => setActiveTab('overview')}
+              onOpenLogin={openLoginModal}
+              isUnauthenticated={!user}
             />
-          )}
+          ) : (
+            <>
+              {/* Active Navigation Panel */}
+              {activeTab === 'overview' && (
+                <OverviewTab
+                  scenarios={scenarios}
+                  selectedScenarioId={selectedScenarioId}
+                  scenarioDetail={scenarioDetail}
+                  isLoadingScenario={isLoadingScenario}
+                  onSelectScenario={loadScenario}
+                  healthResult={healthResult}
+                  recentAuditLogs={auditLogs}
+                  analysisResult={analysisResult}
+                  isAnalyzing={isAnalyzing}
+                  analysisError={analysisError}
+                  onRunAnalysis={handleRunAnalysis}
+                  onNavigateTab={handleSelectTab}
+                  mlPrediction={mlPrediction}
+                  mlPredictionError={mlPredictionError}
+                />
+              )}
 
-          {activeTab === 'risk-map' && (
-            <RiskMapTab
-              scenarioDetail={scenarioDetail}
-              analysisResult={analysisResult}
-              isLoadingScenario={isLoadingScenario}
-              isAnalyzing={isAnalyzing}
-              analysisError={analysisError}
-            />
-          )}
+              {activeTab === 'risk-map' && (
+                <RiskMapTab
+                  scenarioDetail={scenarioDetail}
+                  analysisResult={analysisResult}
+                  isLoadingScenario={isLoadingScenario}
+                  isAnalyzing={isAnalyzing}
+                  analysisError={analysisError}
+                />
+              )}
 
-          {activeTab === 'consequence-graph' && (
-            <ConsequenceGraphTab
-              scenarioDetail={scenarioDetail}
-              analysisResult={analysisResult}
-              isLoadingScenario={isLoadingScenario}
-              isAnalyzing={isAnalyzing}
-              analysisError={analysisError}
-              onRunAnalysis={handleRunAnalysis}
-            />
-          )}
+              {activeTab === 'consequence-graph' && (
+                <ConsequenceGraphTab
+                  scenarioDetail={scenarioDetail}
+                  analysisResult={analysisResult}
+                  isLoadingScenario={isLoadingScenario}
+                  isAnalyzing={isAnalyzing}
+                  analysisError={analysisError}
+                  onRunAnalysis={handleRunAnalysis}
+                />
+              )}
 
-          {activeTab === 'interventions' && (
-            <InterventionsTab
-              scenarioDetail={scenarioDetail}
-              analysisResult={analysisResult}
-              isAnalyzing={isAnalyzing}
-              analysisError={analysisError}
-              onRunAnalysis={handleRunAnalysis}
-            />
-          )}
+              {activeTab === 'interventions' && (
+                <InterventionsTab
+                  scenarioDetail={scenarioDetail}
+                  analysisResult={analysisResult}
+                  isAnalyzing={isAnalyzing}
+                  analysisError={analysisError}
+                  onRunAnalysis={handleRunAnalysis}
+                />
+              )}
 
-          {activeTab === 'emergency-chatbot' && (
-            <EmergencyChatbotTab
-              backendOnline={!!healthResult?.success}
-              scenarioId={selectedScenarioId}
-              scenarioName={scenarioDetail?.name}
-            />
-          )}
+              {activeTab === 'emergency-chatbot' && (
+                <EmergencyChatbotTab
+                  backendOnline={!!healthResult?.success}
+                  scenarioId={selectedScenarioId}
+                  scenarioName={scenarioDetail?.name}
+                />
+              )}
 
-          {activeTab === 'audit-log' && (
-            <AuditLogTab
-              auditLogs={auditLogs}
-              isLoading={isLoadingAudit}
-              error={auditError}
-              onRefresh={loadAuditLogs}
-            />
+              {activeTab === 'audit-log' && (
+                <AuditLogTab
+                  auditLogs={auditLogs}
+                  isLoading={isLoadingAudit}
+                  error={auditError}
+                  onRefresh={loadAuditLogs}
+                />
+              )}
+            </>
           )}
         </main>
 
@@ -297,7 +380,18 @@ export const App: React.FC = () => {
           </div>
         </footer>
       </div>
+
+      {/* Station Login Modal */}
+      <LoginModal isOpen={isLoginModalOpen} onClose={closeLoginModal} />
     </div>
+  );
+};
+
+export const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <OperationsDashboard />
+    </AuthProvider>
   );
 };
 

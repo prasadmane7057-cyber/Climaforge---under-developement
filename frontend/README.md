@@ -1,32 +1,79 @@
-# React + TypeScript + Vite
+# CLIMAFORGE Frontend — React 19 + TypeScript + Vite
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Tactical operations center and flood decision-support dashboard for CLIMAFORGE. Built with React 19, TypeScript, and Vite.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## M16A.6 Frontend Authentication & RBAC Architecture
 
-## React Compiler
+The frontend integrates directly with the FastAPI authentication and Role-Based Access Control (RBAC) backend introduced in milestones M16A.1–M16A.5.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 1. In-Memory Token Security Model
+- **Strict Isolation**: Access tokens are kept exclusively in JavaScript memory (`auth.ts`). They are **NEVER** persisted to `localStorage`, `sessionStorage`, or IndexedDB.
+- **Refresh Cookies**: Refresh tokens are managed entirely by the browser via secure, environment-aware `HttpOnly`, `SameSite=Lax/Strict` cookies (`climaforge_refresh_token`). JavaScript never has access to raw refresh tokens.
+- **CSRF Protection**: State-mutating requests and session operations use the double-submit cookie pattern. The frontend reads the `csrf_token` cookie and injects the `X-CSRF-Token` header.
+- **Deduplicated Silent Refresh**: When multiple concurrent API calls encounter HTTP 401, a centralized promise deduplicator coordinates a single refresh call against `POST /api/auth/refresh`. This prevents token replay-protection race conditions that would otherwise revoke the user's active session family.
 
-## Expanding the Oxlint configuration
+### 2. Authentication State Machine
+Centralized in `AuthProvider` / `useAuth`:
+- `loading`: Initial application boot verifying session presence.
+- `authenticated`: Valid access token in memory with loaded `UserProfile`.
+- `unauthenticated`: Public demonstrator mode or logged-out state.
+- `session-expired`: Session timed out or refresh token expired/revoked; surfaces non-blocking re-authentication prompt.
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+### 3. Canonical Roles & Permissions
+Frontend permissions match the backend definitions in `backend/app/security/rbac.py`:
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+| Role | Default Permissions | Navigation / Action Capabilities |
+| :--- | :--- | :--- |
+| **VIEWER** | `scenario.read`, `chatbot.ask`, `audit.read` | Public/Observer access: view telemetry, ask citizen chatbot, view audit logs. Analysis execution disabled. |
+| **ANALYST** | VIEWER + `scenario.run`, `scenario.run_adhoc`, `ml.predict` | Run deterministic flood simulations (Algorithms 0–13) and ML risk predictions. |
+| **OPERATOR** | ANALYST + `intervention.recommend`, `intervention.approve`, `audit.create` | Command station access: evaluate candidate interventions and approve mitigations. |
+| **AUDITOR** | `audit.read` | Specialized audit officer: inspect chronological audit trail. Direct scenario runs restricted. |
+| **ADMIN** | All system permissions + `admin.users`, `admin.roles`, `admin.scenario_grants` | Full operational and administrative control. |
+
+*Note: `intervention.deploy` is restricted under least-privilege defaults and requires explicit authorization policy.*
+
+### 4. Navigation & Route Guarding
+- **Role-Aware Sidebar**: Navigation items indicate required permissions and display lock indicators when restricted.
+- **Action Guarding**: "Run Flood Analysis" and mitigation buttons check `hasPermission('scenario.run')`.
+- **Unauthorized View**: Unauthorized tab navigation renders `UnauthorizedView` with clear required vs current role details and a quick return button.
+
+---
+
+## Development & Verification
+
+### Install Dependencies
+```bash
+npm install
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+### Run Unit & Integration Tests (Vitest)
+```bash
+npm test
+```
+Runs 30 comprehensive frontend tests covering:
+- In-memory token security and storage isolation
+- CSRF token parsing and header injection
+- Deduplicated silent refresh on concurrent 401s
+- Login credential submission and error handling (401, 403, 429)
+- Idempotent logout and cookie clearance
+- Role and permission evaluation across all canonical roles
+- AuthContext state transitions (`loading` -> `authenticated` / `unauthenticated` / `session-expired`)
+- Component rendering: `Header`, `Sidebar`, `LoginModal`, `UnauthorizedView`
+
+### Lint
+```bash
+npm run lint
+```
+
+### Production Build
+```bash
+npm run build
+```
+
+### Start Development Server
+```bash
+npm run dev
+```
+Runs on `http://localhost:5173`.

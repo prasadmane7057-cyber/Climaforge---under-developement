@@ -13,6 +13,12 @@ import type {
   ChatHistoryItem,
   ChatbotResponse,
 } from '../types/api';
+import {
+  getAccessToken,
+  getCsrfToken,
+  refreshAccessToken,
+  notifySessionExpired,
+} from './auth';
 
 const DEFAULT_API_URL = 'http://localhost:8000';
 
@@ -33,6 +39,9 @@ export interface HealthCheckResult {
   targetUrl: string;
 }
 
+/**
+ * Diagnostic health check ping (unauthenticated).
+ */
 export async function checkBackendHealth(timeoutMs = 4000): Promise<HealthCheckResult> {
   const baseUrl = getApiBaseUrl();
   const targetUrl = `${baseUrl}/health`;
@@ -104,13 +113,72 @@ export async function checkBackendHealth(timeoutMs = 4000): Promise<HealthCheckR
 }
 
 /**
+ * Authenticated fetch wrapper.
+ * Automatically injects:
+ * - Credentials mode: 'include' (for HttpOnly cookies)
+ * - Authorization header: Bearer <inMemoryAccessToken>
+ * - CSRF token header: X-CSRF-Token (for mutating requests)
+ * - Transparent retry on 401 after rotating refresh token
+ */
+export async function authenticatedFetch(
+  input: string,
+  init: RequestInit = {},
+  retryOn401 = true
+): Promise<Response> {
+  const token = getAccessToken();
+  const csrfToken = getCsrfToken();
+
+  const headers = new Headers(init.headers || {});
+  if (!headers.has('Accept')) {
+    headers.set('Accept', 'application/json');
+  }
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  const method = (init.method || 'GET').toUpperCase();
+  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method) && csrfToken && !headers.has('X-CSRF-Token')) {
+    headers.set('X-CSRF-Token', csrfToken);
+  }
+
+  const response = await fetch(input, {
+    ...init,
+    headers,
+    credentials: 'include',
+  });
+
+  // Attempt transparent token refresh on 401 once
+  if (response.status === 401 && retryOn401) {
+    const newToken = await refreshAccessToken();
+    if (newToken) {
+      const retryHeaders = new Headers(init.headers || {});
+      if (!retryHeaders.has('Accept')) {
+        retryHeaders.set('Accept', 'application/json');
+      }
+      retryHeaders.set('Authorization', `Bearer ${newToken}`);
+      const newCsrf = getCsrfToken();
+      if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method) && newCsrf && !retryHeaders.has('X-CSRF-Token')) {
+        retryHeaders.set('X-CSRF-Token', newCsrf);
+      }
+      return fetch(input, {
+        ...init,
+        headers: retryHeaders,
+        credentials: 'include',
+      });
+    } else {
+      notifySessionExpired();
+    }
+  }
+
+  return response;
+}
+
+/**
  * Fetch list of all available demonstration scenarios.
  */
 export async function fetchScenarios(): Promise<ScenarioSummaryItem[]> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/api/scenarios`, {
-    headers: { Accept: 'application/json' },
-  });
+  const response = await authenticatedFetch(`${baseUrl}/api/scenarios`);
   if (!response.ok) {
     throw new Error(`Failed to fetch scenarios (HTTP ${response.status})`);
   }
@@ -122,9 +190,7 @@ export async function fetchScenarios(): Promise<ScenarioSummaryItem[]> {
  */
 export async function fetchScenarioDetail(scenarioId: string): Promise<ScenarioDetail> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/api/scenarios/${encodeURIComponent(scenarioId)}`, {
-    headers: { Accept: 'application/json' },
-  });
+  const response = await authenticatedFetch(`${baseUrl}/api/scenarios/${encodeURIComponent(scenarioId)}`);
   if (!response.ok) {
     throw new Error(`Failed to fetch scenario details for '${scenarioId}' (HTTP ${response.status})`);
   }
@@ -136,9 +202,7 @@ export async function fetchScenarioDetail(scenarioId: string): Promise<ScenarioD
  */
 export async function fetchAuditLogs(): Promise<AuditEvent[]> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/api/audit-logs`, {
-    headers: { Accept: 'application/json' },
-  });
+  const response = await authenticatedFetch(`${baseUrl}/api/audit-logs`);
   if (!response.ok) {
     throw new Error(`Failed to fetch audit logs (HTTP ${response.status})`);
   }
@@ -155,11 +219,10 @@ export async function recordClientAuditEvent(
 ): Promise<AuditEvent | null> {
   try {
     const baseUrl = getApiBaseUrl();
-    const response = await fetch(`${baseUrl}/api/audit-logs`, {
+    const response = await authenticatedFetch(`${baseUrl}/api/audit-logs`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Accept: 'application/json',
       },
       body: JSON.stringify({
         event_type: eventType,
@@ -177,16 +240,15 @@ export async function recordClientAuditEvent(
 }
 
 /**
- * Execute deterministic calculation pipeline (Algorithms 0–3) on the backend.
+ * Execute deterministic calculation pipeline on the backend.
  */
 export async function runScenarioAnalysis(scenarioId: string): Promise<ScenarioAnalysisResponse> {
   const baseUrl = getApiBaseUrl();
   const targetUrl = `${baseUrl}/api/scenarios/${encodeURIComponent(scenarioId)}/analyze`;
 
-  const response = await fetch(targetUrl, {
+  const response = await authenticatedFetch(targetUrl, {
     method: 'POST',
     headers: {
-      Accept: 'application/json',
       'Content-Type': 'application/json',
     },
   });
@@ -211,10 +273,9 @@ export async function predictFloodRisk(
   payload: FloodPredictionRequest
 ): Promise<FloodPredictionResponse> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/api/ml/flood/predict`, {
+  const response = await authenticatedFetch(`${baseUrl}/api/ml/flood/predict`, {
     method: 'POST',
     headers: {
-      Accept: 'application/json',
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(payload),
@@ -238,10 +299,9 @@ export async function askGroundedChatbot(
   history: ChatHistoryItem[] = []
 ): Promise<ChatbotResponse> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/api/chatbot/message`, {
+  const response = await authenticatedFetch(`${baseUrl}/api/chatbot/message`, {
     method: 'POST',
     headers: {
-      Accept: 'application/json',
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({

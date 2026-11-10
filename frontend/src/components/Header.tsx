@@ -4,9 +4,14 @@ import {
   Server,
   AlertTriangle,
   ChevronDown,
+  Shield,
+  LogIn,
+  LogOut,
 } from 'lucide-react';
 import type { HealthCheckResult } from '../services/api';
 import type { ScenarioSummaryItem } from '../types/api';
+import type { UserProfile, RoleName } from '../types/auth';
+import { normalizeRole } from '../types/auth';
 import type { NavigationTab } from './Sidebar';
 
 interface HeaderProps {
@@ -19,6 +24,9 @@ interface HeaderProps {
   selectedScenarioId?: string;
   onSelectScenario?: (id: string) => void;
   isLoadingScenario?: boolean;
+  user?: UserProfile | null;
+  onOpenLogin?: () => void;
+  onLogout?: () => void;
 }
 
 const TAB_TITLES: Record<NavigationTab, { label: string; title: string; subtitle: string }> = {
@@ -64,6 +72,9 @@ export const Header: React.FC<HeaderProps> = ({
   selectedScenarioId,
   onSelectScenario,
   isLoadingScenario,
+  user,
+  onOpenLogin,
+  onLogout,
 }) => {
   const currentTabInfo = TAB_TITLES[activeTab];
   const activeScenario = scenarios?.find((s) => s.scenario_id === selectedScenarioId);
@@ -71,6 +82,9 @@ export const Header: React.FC<HeaderProps> = ({
     activeScenario?.severity === 'CRITICAL' ||
     activeScenario?.severity === 'ELEVATED' ||
     (scenarioName ? scenarioName.toLowerCase().includes('alert') : false);
+
+  const canonicalRole: RoleName | null = user ? normalizeRole(user.role) : null;
+  const isAuthenticated = Boolean(user && user.is_active);
 
   return (
     <header className="dashboard-header">
@@ -133,6 +147,38 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         <div className="header-actions">
+          {/* User / Authentication Pill */}
+          {isAuthenticated ? (
+            <div className="user-profile-pill" title={`Signed in as ${user?.email}`}>
+              <Shield size={13} className="user-profile-icon" />
+              <span className={`user-role-badge role-${(canonicalRole || 'viewer').toLowerCase()}`}>
+                {canonicalRole || user?.role}
+              </span>
+              <span className="user-email-text">{user?.email}</span>
+              {onLogout && (
+                <button
+                  type="button"
+                  className="btn-header-auth"
+                  onClick={onLogout}
+                  title="Sign out of station"
+                  aria-label="Sign out"
+                >
+                  <LogOut size={13} />
+                </button>
+              )}
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="btn btn-sm btn-header-login"
+              onClick={onOpenLogin}
+              title="Authenticate station session"
+            >
+              <LogIn size={13} />
+              <span>Sign In</span>
+            </button>
+          )}
+
           {/* Connection Status Pill */}
           <div
             className={`connection-pill ${

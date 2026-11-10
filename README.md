@@ -441,3 +441,30 @@ CLIMAFORGE Milestone 2 implements the pure deterministic risk engine covering Al
 - **Algorithm 2 (`alg2_hotspots.py`)**: Priority hotspot ranking at threshold 50.0; zero qualified zones triggers `MONITORING_ONLY` state and halts downstream analysis.
 - **Algorithm 3 (`alg3_exposure.py`)**: Multi-factor impact and exposure calculation for hotspots only (weights: Population 0.35, Infrastructure 0.25, Road Network 0.20, Emergency Corridors 0.20), clearly separating normalized indices from raw physical counts.
 - **API & UI Integration**: `POST /api/scenarios/{id}/analyze` and `POST /api/scenarios/run/adhoc` endpoints fully wired to the interactive operational dashboard.
+
+
+---
+
+## Milestone 16A: Authentication, Role-Based Access Control (RBAC), and Frontend Integration
+
+CLIMAFORGE Milestone 16A delivers production-grade authentication, session management, and granular authorization spanning backend services and the React operations center:
+
+- **M16A.1 (Configuration)**: Centralized security settings via Pydantic (`JWT_SECRET_KEY`, `JWT_ALGORITHM`, Argon2id memory/time parameters, token lifetimes).
+- **M16A.2 (Database & Migrations)**: SQLAlchemy models (`users`, `refresh_tokens`) and Alembic migration infrastructure with UUID primary keys and indices.
+- **M16A.3 (Core Security Services)**: Argon2id password hashing with timing attack mitigation, short-lived JWT access tokens, opaque refresh-token rotation with family replay protection and revocation.
+- **M16A.4 (Authentication API & Secure Sessions)**:
+  - `POST /api/auth/login`: Rate-limited endpoint issuing short-lived JWT in JSON and opaque refresh token in HttpOnly cookie; double-submit CSRF cookie.
+  - `POST /api/auth/refresh`: Atomic refresh token rotation with replay detection and CSRF enforcement.
+  - `POST /api/auth/logout`: Idempotent session family revocation and cookie clearance.
+  - `GET /api/auth/me`: Profile retrieval with live database verification.
+- **M16A.5 (Role-Based Access Control & Scenario Authorization)**:
+  - Five canonical roles: `ADMIN`, `OPERATOR`, `ANALYST`, `AUDITOR`, `VIEWER`.
+  - 15 granular permissions (`scenario.*`, `chatbot.*`, `ml.*`, `audit.*`, `intervention.*`, `admin.*`).
+  - Scenario-level authorization with optional explicit, unexpired grants (`ScenarioAccessGrant`).
+- **M16A.6 (Frontend Authentication & RBAC Integration)**:
+  - **In-Memory Token Storage**: Strict isolation in JavaScript memory (`auth.ts`); zero tokens written to `localStorage` or `sessionStorage`.
+  - **HttpOnly Refresh Cookies & CSRF**: Automatic `credentials: 'include'` and `X-CSRF-Token` injection on mutating requests.
+  - **Concurrent Refresh Deduplication**: Atomic promise deduplication prevents replay-protection revocation from simultaneous 401s.
+  - **Centralized Auth State**: `AuthProvider` supporting `loading`, `authenticated`, `unauthenticated`, and `session-expired` states.
+  - **Role-Aware UI & Action Guarding**: Dynamic role badges (`ADMIN`, `OPERATOR`, `VIEWER`), locked sidebar tabs for restricted modules, "Run Analysis" permission checks, and `UnauthorizedView`.
+  - **Testing**: 250 backend pytest tests + 30 frontend Vitest integration tests.
